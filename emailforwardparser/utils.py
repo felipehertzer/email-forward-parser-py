@@ -39,43 +39,43 @@ def find_all_string_submatch_index(pattern, s, n=-1):
 
 def split_with_regexp(pattern, s):
     # test = [match.span() for match in pattern.finditer(s)]
-    splitIndices = find_all_string_submatch_index(pattern, s)
+    split_indices = find_all_string_submatch_index(pattern, s)
 
-    if not splitIndices:
+    if not split_indices:
         return [s]
 
-    # if splitIndices:
-        # print(f"splitIndices: {splitIndices}")
+    # if split_indices:
+        # print(f"splitIndices: {split_indices}")
 
     result = []
-    prevIndex = 0
+    prev_index = 0
 
-    newSplitIndices = []
-    for indices in splitIndices:
-        newIndicie = []
+    new_split_indices = []
+    for indices in split_indices:
+        new_indicie = []
         for i in range(0, len(indices), 2):
             ia, ib = indices[i], indices[i + 1]
             if i > 0:
                 ya, yb = indices[i-2], indices[i-1]
                 if ia == ya and ib == yb:
                     continue
-            newIndicie.extend([ia, ib])
-        newSplitIndices.append(newIndicie)
+            new_indicie.extend([ia, ib])
+        new_split_indices.append(new_indicie)
 
-    splitIndices = newSplitIndices
+    split_indices = new_split_indices
 
-    if splitIndices[0][0] == 0:
+    if split_indices[0][0] == 0:
         result.append("")
 
-    for indices in splitIndices:
+    for indices in split_indices:
         for i in range(0, len(indices), 2):
             ia, ib = indices[i], indices[i + 1]
-            if prevIndex < ia:
-                result.append(s[prevIndex:ia])
+            if prev_index < ia:
+                result.append(s[prev_index:ia])
             result.append(s[ia:ib])
-            prevIndex = ib
+            prev_index = ib
 
-    if prevIndex < len(s):
-        result.append(s[prevIndex:])
+    if prev_index < len(s):
+        result.append(s[prev_index:])
 
     return result

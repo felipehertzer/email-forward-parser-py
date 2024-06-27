@@ -31,20 +31,9 @@ class EmailParserClient:
                 msg = eml
         return self._get_dict(msg, original_metadata.email, original_metadata.forwarded)
 
-    def get_original_eml_json(self, email: str) -> str:
-        """
-        Retrieve the original email message as a JSON string, including metadata and content.
-
-        :param email: Contents of email to be parsed.
-        :type email: str
-        :return: A JSON string containing the email metadata and content.
-        :rtype: str
-        """
-        return json.dumps(self.get_original_eml(email))
-
     def get_original_eml_from_file(self, file_path: str) -> dict:
         """
-        Retrieve the original email message as a JSON str, including metadata and content.
+        Retrieve the original email message, including metadata and content.
 
         :param file_path: The path to the email file to parse.
         :type file_path: str
@@ -53,18 +42,24 @@ class EmailParserClient:
         """
         return self.get_original_eml(self._get_file_content(file_path))
 
-    def get_original_eml_json_from_file(self, file_path: str) -> str:
+    def get_original_metadata(self, email: str) -> fp.ForwardMetadata:
         """
-        Retrieve the original email message as a JSON str, including metadata and content.
+        Extract metadata from the original or forwarded email.
 
-        :param file_path: The path to the email file to parse.
-        :type file_path: str
-        :return: A JSON string containing the email metadata and content.
-        :rtype: str
+        :param email: Contents of email to be parsed.
+        :type email: str
+        :return: An object containing metadata of the original email.
+        :rtype: fp.ForwardMetadata
         """
-        return json.dumps(self.get_original_eml(self._get_file_content(file_path)))
+        msg = Parser().parsestr(email)
+        original_metadata = self._get_forwarded_metadata(msg)
+        if not original_metadata.forwarded:
+            eml = self._get_eml_attachment(msg)
+            if eml:
+                original_metadata = self._get_forwarded_metadata(eml)
+        return original_metadata
 
-    def get_original_metadata(self, file_path: str) -> fp.ForwardMetadata:
+    def get_original_metadata_from_file(self, file_path: str) -> fp.ForwardMetadata:
         """
         Extract metadata from the original or forwarded email.
 
