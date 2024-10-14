@@ -667,4 +667,4 @@ MAILBOX = [
     re.compile(r"^([^;].+?)\s?\n?\s*[\[|<](.+?)[\]|>]"),
 ]
 
-MAILBOX_ADDRESS = [re.compile(r"^(([^\s@]+)@([^\s@]+)\.([^\s@]+))$")]
+MAILBOX_ADDRESS = [re.compile(r"^(([^\s@]+)@([^\s@]+)\.*([^\s@]+))$")]

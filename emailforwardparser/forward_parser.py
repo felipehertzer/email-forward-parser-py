@@ -55,7 +55,7 @@ def parse_body(body: str, forwarded: bool) -> ParseBodyResult:
     # match[1]: seperator
     # match[2]: message after seperator
     if len(match) > 2:
-        email = match[2]
+        email = match[-1]
         return ParseBodyResult(
             body=body,
             message=match[0].strip(),
@@ -70,7 +70,6 @@ def parse_body(body: str, forwarded: bool) -> ParseBodyResult:
             return ParseBodyResult(
                 body=body, message=match[0].strip(), email=email.strip()
             )
-
     return ParseBodyResult()
 
 
@@ -80,7 +79,7 @@ def parse_original_body(text: str) -> str:
 
     for regex in regexes:
         match = loop.loop_regexes_split(regex, text, True)
-        if len(match) > 2 and match[3].startswith("\n\n"):
+        if len(match) > 3 and match[3].startswith("\n\n"):
             body = match[3]
             return body.strip()
     match = loop.loop_regexes_split(
@@ -88,7 +87,6 @@ def parse_original_body(text: str) -> str:
     if len(match) > 3:
         body = match[3]
         return body.strip()
-
     return text.strip()
 
 
@@ -102,15 +100,15 @@ def parse_original_email(text: str, body: str) -> OriginalMetadata:
     return OriginalMetadata(
         body=parse_original_body(text),
         from_=parse_original_from(text, body),
-        to=parse_original_to(text),
-        cc=parse_original_cc(text),
+        to=parse_original_to(text, body),
+        cc=parse_original_cc(text, body),
         subject=parse_original_subject(text),
         date=parse_original_date(text, body),
     )
 
 
 def parse_original_from(text: str, body: str) -> MailboxResult:
-    authors = parse_mailbox(regexs.ORIGINAL_FROM, text)
+    authors = parse_mailbox(regexs.ORIGINAL_FROM, text) or parse_mailbox(regexs.ORIGINAL_FROM, body)
     if authors:
         author = authors[0]
         if author.name or author.address:
@@ -130,12 +128,11 @@ def parse_original_from(text: str, body: str) -> MailboxResult:
         name = match[2]
         address = match[3]
         return prepare_mailbox(name, address)
-
     return MailboxResult()
 
 
-def parse_original_to(text: str) -> list[MailboxResult]:
-    recipients = parse_mailbox(regexs.ORIGINAL_TO, text)
+def parse_original_to(text: str, body) -> list[MailboxResult]:
+    recipients = parse_mailbox(regexs.ORIGINAL_TO, text) or parse_mailbox(regexs.ORIGINAL_TO, body)
     if recipients:
         return recipients
 
@@ -145,8 +142,8 @@ def parse_original_to(text: str) -> list[MailboxResult]:
     return parse_mailbox(regexs.ORIGINAL_TO_LAX, text)
 
 
-def parse_original_cc(text: str) -> list[MailboxResult]:
-    recipients = parse_mailbox(regexs.ORIGINAL_CC, text)
+def parse_original_cc(text: str, body: str) -> list[MailboxResult]:
+    recipients = parse_mailbox(regexs.ORIGINAL_CC, text) or parse_mailbox(regexs.ORIGINAL_CC, body)
     if recipients:
         return recipients
 
@@ -162,12 +159,11 @@ def parse_original_subject(text: str) -> str:
     match, _ = loop.loop_regexes_match(regexs.ORIGINAL_SUBJECT_LAX, text)
     if match:
         return match[1].strip()
-
     return ""
 
 
 def parse_original_date(text: str, body: str) -> str:
-    match, _ = loop.loop_regexes_match(regexs.ORIGINAL_DATE, text)
+    match = loop.loop_regexes_match(regexs.ORIGINAL_DATE, text)[0] or loop.loop_regexes_match(regexs.ORIGINAL_DATE, body)[0]
     if match:
         return match[1].strip()
     match, pattern = loop.loop_regexes_match(
@@ -181,7 +177,6 @@ def parse_original_date(text: str, body: str) -> str:
     match, _ = loop.loop_regexes_match(regexs.ORIGINAL_DATE_LAX, text)
     if match:
         return match[1].strip()
-
     return ""
 
 

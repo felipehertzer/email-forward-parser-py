@@ -1,3 +1,4 @@
+import email.header
 import unicodedata
 
 
@@ -9,6 +10,7 @@ def is_graphic(char):
 def preprocess_string(s: str) -> str:
     s = ''.join(char for char in s if not is_graphic(char))
     s = s.replace("\uFEFF", "")
+    s = str(email.header.make_header(email.header.decode_header(s)))
     return s
 
 

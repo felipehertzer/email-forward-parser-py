@@ -1,11 +1,17 @@
-import json
 import re
+import json
+import base64
+import logging
 from email.message import EmailMessage, Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.parser import Parser
 
 from emailforwardparser import forward_parser as fp
+
+
+log = logging.getLogger('emailforwardparser')
+EMAIL_ADDR_REGEX = re.compile(r'[\w.+-]+@[\w-]+\.*[\w.-]+')
 
 
 class EmailParserClient:
@@ -17,19 +23,22 @@ class EmailParserClient:
         """
         Retrieve the original email message as a dict, including metadata and content.
 
+        If any field contains invalid data, the empty string will replace it.
+
         :param email: Contents of email to be parsed.
         :type email: str
         :return: A dictionary containing the email metadata and content.
         :rtype: dict
         """
         msg = Parser().parsestr(email)
+        matches = EMAIL_ADDR_REGEX.search(msg.get("From", ''))
+        send_to = matches.group(0) if matches else ''
         original_metadata = self._get_forwarded_metadata(msg)
         if not original_metadata.forwarded:
             eml = self._get_eml_attachment(msg)
             if eml:
-                original_metadata = self._get_forwarded_metadata(eml)
                 msg = eml
-        return self._get_dict(msg, original_metadata.email, original_metadata.forwarded)
+        return self._get_dict(msg, original_metadata.email, original_metadata.forwarded, send_to=send_to)
 
     def get_original_eml_from_file(self, file_path: str) -> dict:
         """
@@ -71,25 +80,31 @@ class EmailParserClient:
         msg = Parser().parsestr(self._get_file_content(file_path))
         return self._get_forwarded_metadata(msg)
 
-    def _get_dict(self, message: Message, email: fp.OriginalMetadata, forwarded: bool) -> dict:
+    def _get_dict(self, message: Message, email: fp.OriginalMetadata, forwarded: bool, send_to: str = '') -> dict:
         result = {}
+        if not send_to:
+            try:
+                matches = re.search(r'[\w.-]+@[\w-]+\.*[\w.-]+', message.get("From", ''))
+                send_to = matches.group(0) if matches else ''
+            except Exception:
+                log.warning('No From field found in email, assigning Send-To to empty string')
+                send_to = ''
         if forwarded:
-            result["Send-To"] = email.to[0].address
             result["eml"] = self._build_original_email(email, message).as_string()
         else:
-            result["Send-To"] = re.search(r'[\w.+-]+@[\w-]+\.[\w.-]+', message.get("From")).group(0)
             result["eml"] = message.as_string()
+        result['Send-To'] = send_to
         return result
 
     def _build_original_email(self, metadata: fp.OriginalMetadata, message: Message) -> EmailMessage | MIMEMultipart:
         if not message.is_multipart():
             result_message = EmailMessage()
-            self._set_headers(metadata, message, result_message)
+            self._set_headers(metadata, result_message)
             result_message.set_content(metadata.body)
             return result_message
 
         result = MIMEMultipart()
-        self._set_headers(metadata, message, result)
+        self._set_headers(metadata, result)
 
         if metadata.cc:
             result["CC"] = self._format_addresses(metadata.cc)
@@ -101,13 +116,18 @@ class EmailParserClient:
         payload = message.get_payload()
         if isinstance(payload, list):
             for part in payload:
-                if (part.get_content_type() == 'text/plain'
-                        and 'attachment' not in str(part.get('Content-Disposition'))):
+                if isinstance(part, str) or (part.get_content_type() == 'text/plain'
+                                             and 'attachment' not in str(part.get('Content-Disposition'))):
                     continue
+                if part.get_content_subtype() in ['related', 'alternative']:
+                    payload.extend(part.get_payload())
+                    continue
+                if part.get_content_type() == 'text/html':
+                    part.set_payload(self.get_decoded_str(part.get_payload()))
                 result.attach(part)
         return result
 
-    def _set_headers(self, metadata: fp.OriginalMetadata, message: Message, result: EmailMessage | Message) -> None:
+    def _set_headers(self, metadata: fp.OriginalMetadata, result: EmailMessage | Message) -> None:
         result["Date"] = metadata.date
         result["From"] = metadata.from_.address
         result["Subject"] = metadata.subject
@@ -116,10 +136,12 @@ class EmailParserClient:
             result["CC"] = self._format_addresses(metadata.cc)
 
     def _format_addresses(self, contacts: list[fp.MailboxResult]) -> str:
-        result = contacts[0].address
-        for index in range(1, len(contacts)):
-            result += ", " + contacts[index].address
-        return result
+        if contacts:
+            result = contacts[0].address
+            for index in range(1, len(contacts)):
+                result += ", " + contacts[index].address
+            return result
+        return ''
 
     def _get_forwarded_metadata(self, message: Message) -> fp.ForwardMetadata:
         body = self._get_body(message)
@@ -130,26 +152,36 @@ class EmailParserClient:
         return fp.get_forwarded_metadata(body.strip())
 
     def _get_body(self, msg: Message) -> str:
+        body = ''
         if msg.is_multipart():
             for part in msg.walk():
                 content_type = part.get_content_type()
                 content_disposition = str(part.get('Content-Disposition'))
 
                 if content_type == 'text/plain' and 'attachment' not in content_disposition:
-                    body = part.get_payload()
+                    body = self.get_decoded_str(part.get_payload())
                     break
         else:
-            body = msg.get_payload()
-
+            body = self.get_decoded_str(msg.get_payload())
         return body if isinstance(body, str) else ""
 
     def _get_eml_attachment(self, message: Message) -> Message | None:
         for part in message.walk():
             file_name = part.get_filename()
             if (file_name is not None and file_name.endswith(".eml")):
-                return part.get_payload()[0]
+                try:
+                    return part.get_payload()[0]
+                except Exception:
+                    log.warning('failed to get attached eml, looking for others')
+                    continue
         return None
 
     def _get_file_content(self, file_path: str) -> str:
         with open(file_path, "r", encoding="utf8") as file:
             return file.read()
+
+    def get_decoded_str(self, s) -> str:
+        try:
+            return base64.b64decode(s).decode()
+        except Exception:
+            return s
