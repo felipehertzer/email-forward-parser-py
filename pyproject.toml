@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "email-forward-parser"
-version = "0.1.1"
+version = "0.1.2"
 description = "Python Library to parse forwarded email messages"
 readme = "README.md"
 requires-python = ">=3.8"
