@@ -96,7 +96,7 @@ def parse_original_email(text: str, body: str) -> OriginalMetadata:
     text = regexs.QUOTE_LINE_BREAK.sub("", text)
     text = regexs.QUOTE.sub("", text)
     text = regexs.FOUR_SPACES.sub("", text)
-
+    dummy = parse_original_body(text)
     return OriginalMetadata(
         body=parse_original_body(text),
         from_=parse_original_from(text, body),
@@ -108,7 +108,15 @@ def parse_original_email(text: str, body: str) -> OriginalMetadata:
 
 
 def parse_original_from(text: str, body: str) -> MailboxResult:
-    authors = parse_mailbox(regexs.ORIGINAL_FROM, text) or parse_mailbox(regexs.ORIGINAL_FROM, body)
+    text_authors = parse_mailbox(regexs.ORIGINAL_FROM, text)
+    body_authors = parse_mailbox(regexs.ORIGINAL_FROM, body)
+    if not text_authors:
+        authors = body_authors
+    elif text_authors and not text_authors[0].address:
+        authors = body_authors if body_authors and body_authors[0].address else text_authors
+    else:
+        authors = text_authors
+
     if authors:
         author = authors[0]
         if author.name or author.address:
@@ -132,7 +140,15 @@ def parse_original_from(text: str, body: str) -> MailboxResult:
 
 
 def parse_original_to(text: str, body) -> list[MailboxResult]:
-    recipients = parse_mailbox(regexs.ORIGINAL_TO, text) or parse_mailbox(regexs.ORIGINAL_TO, body)
+    text_recipients = parse_mailbox(regexs.ORIGINAL_TO, text)
+    body_recipients = parse_mailbox(regexs.ORIGINAL_TO, body)
+    if not text_recipients:
+        recipients = body_recipients
+    elif text_recipients and not text_recipients[0].address:
+        recipients = body_recipients if body_recipients and body_recipients[0].address else text_recipients
+    else:
+        recipients = text_recipients
+
     if recipients:
         return recipients
 
