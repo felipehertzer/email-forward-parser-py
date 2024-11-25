@@ -87,6 +87,7 @@ class EmailParserClient:
 
     def _get_dict(self, message: Message, email: fp.OriginalMetadata, forwarded: bool, send_to: str = '') -> dict:
         result = {}
+        result['forward'] = forwarded
         if not send_to:
             try:
                 matches = re.search(r'[\w.-]+@[\w-]+\.*[\w.-]+', message.get("From", ''))
