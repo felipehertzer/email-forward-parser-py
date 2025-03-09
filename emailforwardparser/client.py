@@ -6,6 +6,7 @@ from email.message import EmailMessage, Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.parser import Parser
+from typing import Any
 
 from emailforwardparser import forward_parser as fp
 
@@ -33,11 +34,10 @@ class EmailParserClient:
         msg = Parser().parsestr(email)
         matches = EMAIL_ADDR_REGEX.search(msg.get("From", ''))
         send_to = matches.group(0) if matches else ''
+        eml = self._get_eml_attachment(msg)
+        if eml:
+            return self._get_dict(eml, fp.OriginalMetadata(), False, send_to=send_to)
         original_metadata = self._get_forwarded_metadata(msg)
-        if not original_metadata.forwarded:
-            eml = self._get_eml_attachment(msg)
-            if eml:
-                msg = eml
         return self._get_dict(msg, original_metadata.email, original_metadata.forwarded, send_to=send_to)
 
     def get_original_eml_from_file(self, file_path: str) -> dict:
@@ -80,20 +80,16 @@ class EmailParserClient:
         msg = Parser().parsestr(self._get_file_content(file_path))
         return self._get_forwarded_metadata(msg)
 
-    def _get_dict(self, message: Message, email: fp.OriginalMetadata, forwarded: bool, send_to: str = '') -> dict:
-        result = {}
+    def _get_dict(self, message: Message | str, email: fp.OriginalMetadata, forwarded: bool, send_to: str = '') -> dict:
+        result: dict[str, Any] = {}
         result['forward'] = forwarded
-        if not send_to:
-            try:
-                matches = re.search(r'[\w.-]+@[\w-]+\.*[\w.-]+', message.get("From", ''))
-                send_to = matches.group(0) if matches else ''
-            except Exception:
-                log.warning('No From field found in email, assigning Send-To to empty string')
-                send_to = ''
         if forwarded:
             result["eml"] = self._build_original_email(email, message).as_string()
         else:
-            result["eml"] = message.as_string()
+            if isinstance(message, Message):
+                result["eml"] = message.as_string()
+            else:
+                result['eml'] = message
         result['Send-To'] = send_to
         return result
 
@@ -110,7 +106,7 @@ class EmailParserClient:
         if metadata.cc:
             result["CC"] = self._format_addresses(metadata.cc)
 
-        mt = MIMEText(None, _subtype="plain", _charset="utf-8")
+        mt = MIMEText(None, _subtype="plain", _charset="utf-8")  # type: ignore
         mt.replace_header("content-transfer-encoding", "quoted-printable")
         mt.set_payload(metadata.body)
         result.attach(mt)
@@ -166,16 +162,20 @@ class EmailParserClient:
             body = self.get_decoded_str(msg.get_payload())
         return body if isinstance(body, str) else ""
 
-    def _get_eml_attachment(self, message: Message) -> Message | None:
+    def _get_eml_attachment(self, message: Message) -> str:
         for part in message.walk():
             content_type = part.get_content_type()
             if content_type is not None and content_type == 'message/rfc822':
                 try:
-                    return part.get_payload()[0]
+                    return part.get_payload()[0].as_string()
                 except Exception:
                     log.warning('failed to get attached eml, looking for others')
                     continue
-        return None
+            if content_type is not None and content_type == 'application/octet-stream':
+                file_name = part.get_filename()
+                if file_name and file_name.endswith('.eml'):
+                    return base64.b64decode(part.get_payload()).decode()
+        return ''
 
     def _get_file_content(self, file_path: str) -> str:
         with open(file_path, "r", encoding="utf8") as file:
