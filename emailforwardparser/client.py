@@ -63,7 +63,7 @@ class EmailParserClient:
         msg = Parser().parsestr(email)
         original_metadata = self._get_forwarded_metadata(msg)
         if not original_metadata.forwarded:
-            eml = self._get_eml_attachment(msg)
+            eml = Parser().parsestr(self._get_eml_attachment(msg))
             if eml:
                 original_metadata = self._get_forwarded_metadata(eml)
         return original_metadata
