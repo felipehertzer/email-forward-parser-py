@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from re import Pattern
 
@@ -7,6 +9,7 @@ from emailforwardparser import loop, regexs, utils
 @dataclass
 class MailboxResult:
     """Class storing the name and address of a mailbox."""
+
     name: str = ""
     address: str = ""
 
@@ -14,6 +17,7 @@ class MailboxResult:
 @dataclass
 class ParseBodyResult:
     """Class storing metadata of parsed forwarded email."""
+
     body: str = ""
     message: str = ""
     email: str = ""
@@ -22,6 +26,7 @@ class ParseBodyResult:
 @dataclass
 class OriginalMetadata:
     """Class storing metadata of original content in forwarded message."""
+
     date: str = ""
     subject: str = ""
     body: str = ""
@@ -33,6 +38,7 @@ class OriginalMetadata:
 @dataclass
 class ForwardMetadata:
     """Result object storing forwarded email metadata."""
+
     forwarded: bool = False
     message: str = ""
     email: OriginalMetadata = field(default_factory=OriginalMetadata)
@@ -56,26 +62,23 @@ def parse_body(body: str, forwarded: bool) -> ParseBodyResult:
     # match[2]: message after seperator
     if len(match) > 2:
         email = match[-1]
-        return ParseBodyResult(
-            body=body,
-            message=match[0].strip(),
-            email=email.strip()
-        )
+        return ParseBodyResult(body=body, message=match[0].strip(), email=email.strip())
 
     if forwarded:
-        match = loop.loop_regexes_split(
-            regexs.ORIGINAL_FROM, body, True)
+        match = loop.loop_regexes_split(regexs.ORIGINAL_FROM, body, True)
         if len(match) > 2:
             email = "".join(match[i] for i in [1, 3])
-            return ParseBodyResult(
-                body=body, message=match[0].strip(), email=email.strip()
-            )
+            return ParseBodyResult(body=body, message=match[0].strip(), email=email.strip())
     return ParseBodyResult()
 
 
 def parse_original_body(text: str) -> str:
-    regexes = [regexs.ORIGINAL_SUBJECT, regexs.ORIGINAL_CC,
-               regexs.ORIGINAL_TO, regexs.ORIGINAL_REPLY_TO]
+    regexes = [
+        regexs.ORIGINAL_SUBJECT,
+        regexs.ORIGINAL_CC,
+        regexs.ORIGINAL_TO,
+        regexs.ORIGINAL_REPLY_TO,
+    ]
 
     for regex in regexes:
         match = loop.loop_regexes_split(regex, text, True)
@@ -83,7 +86,8 @@ def parse_original_body(text: str) -> str:
             body = match[3]
             return body.strip()
     match = loop.loop_regexes_split(
-        regexs.ORIGINAL_SUBJECT + regexs.ORIGINAL_SUBJECT_LAX, text, True)
+        regexs.ORIGINAL_SUBJECT + regexs.ORIGINAL_SUBJECT_LAX, text, True
+    )
     if len(match) > 3:
         body = match[3]
         return body.strip()
@@ -96,7 +100,6 @@ def parse_original_email(text: str, body: str) -> OriginalMetadata:
     text = regexs.QUOTE_LINE_BREAK.sub("", text)
     text = regexs.QUOTE.sub("", text)
     text = regexs.FOUR_SPACES.sub("", text)
-    dummy = parse_original_body(text)
     return OriginalMetadata(
         body=parse_original_body(text),
         from_=parse_original_from(text, body),
@@ -122,13 +125,11 @@ def parse_original_from(text: str, body: str) -> MailboxResult:
         if author.name or author.address:
             return author
 
-    match, pattern = loop.loop_regexes_match(
-        regexs.SEPARATOR_WITH_INFORMATION, body)
-    if len(match) == 4:
+    match, pattern = loop.loop_regexes_match(regexs.SEPARATOR_WITH_INFORMATION, body)
+    if len(match) == 4 and pattern is not None:
         named_matches = utils.find_named_matches(pattern, body)
         return prepare_mailbox(
-            named_matches.get("from_name", ""), named_matches.get(
-                "from_address", "")
+            named_matches.get("from_name", ""), named_matches.get("from_address", "")
         )
 
     match, _ = loop.loop_regexes_match(regexs.ORIGINAL_FROM_LAX, text)
@@ -139,13 +140,15 @@ def parse_original_from(text: str, body: str) -> MailboxResult:
     return MailboxResult()
 
 
-def parse_original_to(text: str, body) -> list[MailboxResult]:
+def parse_original_to(text: str, body: str) -> list[MailboxResult]:
     text_recipients = parse_mailbox(regexs.ORIGINAL_TO, text)
     body_recipients = parse_mailbox(regexs.ORIGINAL_TO, body)
     if not text_recipients:
         recipients = body_recipients
     elif text_recipients and not text_recipients[0].address:
-        recipients = body_recipients if body_recipients and body_recipients[0].address else text_recipients
+        recipients = (
+            body_recipients if body_recipients and body_recipients[0].address else text_recipients
+        )
     else:
         recipients = text_recipients
 
@@ -179,13 +182,15 @@ def parse_original_subject(text: str) -> str:
 
 
 def parse_original_date(text: str, body: str) -> str:
-    match = loop.loop_regexes_match(regexs.ORIGINAL_DATE, text)[0] or loop.loop_regexes_match(regexs.ORIGINAL_DATE, body)[0]
+    match = (
+        loop.loop_regexes_match(regexs.ORIGINAL_DATE, text)[0]
+        or loop.loop_regexes_match(regexs.ORIGINAL_DATE, body)[0]
+    )
     if match:
         return match[1].strip()
-    match, pattern = loop.loop_regexes_match(
-        regexs.SEPARATOR_WITH_INFORMATION, body)
+    match, pattern = loop.loop_regexes_match(regexs.SEPARATOR_WITH_INFORMATION, body)
 
-    if len(match) == 4:
+    if len(match) == 4 and pattern is not None:
         named_matches = utils.find_named_matches(pattern, body)
         return named_matches.get("date", "").strip()
 
@@ -203,8 +208,7 @@ def parse_mailbox(regexes: list[Pattern], text: str) -> list[MailboxResult]:
         if mailboxes_line:
             mailboxes = []
             while mailboxes_line:
-                mailbox_match, _ = loop.loop_regexes_match(
-                    regexs.MAILBOX, mailboxes_line)
+                mailbox_match, _ = loop.loop_regexes_match(regexs.MAILBOX, mailboxes_line)
                 if mailbox_match:
                     if len(mailbox_match) == 3:
                         name = mailbox_match[1]
@@ -213,9 +217,7 @@ def parse_mailbox(regexes: list[Pattern], text: str) -> list[MailboxResult]:
                         name = ""
                         address = mailbox_match[1]
                     mailboxes.append(prepare_mailbox(name, address))
-                    mailboxes_line = mailboxes_line.replace(
-                        mailbox_match[0], "", 1
-                    ).strip()
+                    mailboxes_line = mailboxes_line.replace(mailbox_match[0], "", 1).strip()
                     if mailboxes_line and mailboxes_line[0] in regexs.MAILBOX_SEPARATORS:
                         mailboxes_line = mailboxes_line[1:].strip()
                 else:

@@ -49,7 +49,7 @@ SUBJECT = [
 
 SEPARATOR = [
     # Apple Mail (en)
-    re.compile(r"^>?\s*Begin forwarded message\s?:"),
+    re.compile(r"(?m)^>?\s*Begin forwarded message\s?:"),
     # Apple Mail (cs)
     re.compile(r"(?m)^>?\s*Začátek přeposílané zprávy\s?:"),
     # Apple Mail (da)
@@ -198,39 +198,73 @@ SEPARATOR = [
 
 SEPARATOR_WITH_INFORMATION = [
     # Outlook 2019 (cz)
-    re.compile(r"(?m)^\s?Dne\s?(?P<date>.+)\,\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?napsal\(a\)\s?:"),
+    re.compile(
+        r"(?m)^\s?Dne\s?(?P<date>.+)\,\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?napsal\(a\)\s?:"
+    ),
     # Outlook 2019 (da)
-    re.compile(r"(?m)^\s?D.\s?(?P<date>.+)\s?skrev\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?:"),
+    re.compile(
+        r"(?m)^\s?D.\s?(?P<date>.+)\s?skrev\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?:"
+    ),
     # Outlook 2019 (de)
-    re.compile(r"(?m)^\s?Am\s?(?P<date>.+)\s?schrieb\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?:"),
+    re.compile(
+        r"(?m)^\s?Am\s?(?P<date>.+)\s?schrieb\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?:"
+    ),
     # Outlook 2019 (en)
-    re.compile(r"(?m)^\s?On\s?(?P<date>.+)\,\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?wrote\s?:"),
+    re.compile(
+        r"(?m)^\s?On\s?(?P<date>.+)\,\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?wrote\s?:"
+    ),
     # Outlook 2019 (es)
-    re.compile(r"(?m)^\s?El\s?(?P<date>.+)\,\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?escribió\s?:"),
+    re.compile(
+        r"(?m)^\s?El\s?(?P<date>.+)\,\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?escribió\s?:"
+    ),
     # Outlook 2019 (fr)
-    re.compile(r"(?m)^\s?Le\s?(?P<date>.+)\,\s?«(?P<from_name>.+)»\s*[\[|<](?P<from_address>.+)[\]|>]\s?a écrit\s?:"),
+    re.compile(
+        r"(?m)^\s?Le\s?(?P<date>.+)\,\s?«(?P<from_name>.+)»\s*[\[|<](?P<from_address>.+)[\]|>]\s?a écrit\s?:"
+    ),
     # Outlook 2019 (fi)
-    re.compile(r"(?m)^\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?kirjoitti\s?(?P<date>.+)\s?:"),
+    re.compile(
+        r"(?m)^\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?kirjoitti\s?(?P<date>.+)\s?:"
+    ),
     # Outlook 2019 (hu)
-    re.compile(r"(?m)^\s?(?P<date>.+)\s?időpontban\s?(?P<from_name>.+)\s*[\[|<|(](?P<from_address>.+)[\]|>|)]\s?ezt írta\s?:"),
+    re.compile(
+        r"(?m)^\s?(?P<date>.+)\s?időpontban\s?(?P<from_name>.+)\s*[\[|<|(](?P<from_address>.+)[\]|>|)]\s?ezt írta\s?:"
+    ),
     # Outlook 2019 (it)
-    re.compile(r"(?m)^\s?Il giorno\s?(?P<date>.+)\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?ha scritto\s?:"),
+    re.compile(
+        r"(?m)^\s?Il giorno\s?(?P<date>.+)\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?ha scritto\s?:"
+    ),
     # Outlook 2019 (nl)
-    re.compile(r"(?m)^\s?Op\s?(?P<date>.+)\s?heeft\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?geschreven\s?:"),
+    re.compile(
+        r"(?m)^\s?Op\s?(?P<date>.+)\s?heeft\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?geschreven\s?:"
+    ),
     # Outlook 2019 (no)
-    re.compile(r"(?m)^\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?skrev følgende den\s?(?P<date>.+)\s?:"),
+    re.compile(
+        r"(?m)^\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?skrev følgende den\s?(?P<date>.+)\s?:"
+    ),
     # Outlook 2019 (pl)
-    re.compile(r"(?m)^\s?Dnia\s?(?P<date>.+)\s?„(?P<from_name>.+)”\s*[\[|<](?P<from_address>.+)[\]|>]\s?napisał\s?:"),
+    re.compile(
+        r"(?m)^\s?Dnia\s?(?P<date>.+)\s?„(?P<from_name>.+)”\s*[\[|<](?P<from_address>.+)[\]|>]\s?napisał\s?:"
+    ),
     # Outlook 2019 (pt)
-    re.compile(r"(?m)^\s?Em\s?(?P<date>.+)\,\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?escreveu\s?:"),
+    re.compile(
+        r"(?m)^\s?Em\s?(?P<date>.+)\,\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?escreveu\s?:"
+    ),
     # Outlook 2019 (ru)
-    re.compile(r"(?m)^\s?(?P<date>.+)\s?пользователь\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?написал\s?:"),
+    re.compile(
+        r"(?m)^\s?(?P<date>.+)\s?пользователь\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?написал\s?:"
+    ),
     # Outlook 2019 (sk)
-    re.compile(r"(?m)^\s?(?P<date>.+)\s?používateľ\s?(?P<from_name>.+)\s*\([\[|<](?P<from_address>.+)[\]|>]\)\s?napísal\s?:"),
+    re.compile(
+        r"(?m)^\s?(?P<date>.+)\s?používateľ\s?(?P<from_name>.+)\s*\([\[|<](?P<from_address>.+)[\]|>]\)\s?napísal\s?:"
+    ),
     # Outlook 2019 (sv)
-    re.compile(r"(?m)^\s?Den\s?(?P<date>.+)\s?skrev\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?följande\s?:"),
+    re.compile(
+        r"(?m)^\s?Den\s?(?P<date>.+)\s?skrev\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\s?följande\s?:"
+    ),
     # Outlook 2019 (tr)
-    re.compile(r"(?m)^\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\,\s?(?P<date>.+)\s?tarihinde şunu yazdı\s?:"),
+    re.compile(
+        r"(?m)^\s?\"(?P<from_name>.+)\"\s*[\[|<](?P<from_address>.+)[\]|>]\,\s?(?P<date>.+)\s?tarihinde şunu yazdı\s?:"
+    ),
 ]
 
 ORIGINAL_SUBJECT = [
@@ -662,9 +696,9 @@ MAILBOX = [
     # "<walter.sheltan@acme.com>"
     re.compile(r"^(.?)\s?\n?\s*[\[|<](.+?)[\]|>]"),
     # "walter.sheltan@acme.com"
-    re.compile(r"^([^\s@]+@[^\s@]+\.[^\s@,]+)"),
+    re.compile(r"^([^\s@,;]+@[^\s@,;]+\.[^\s@,;]+)"),
     # "Walter, Sheltan <walter.sheltan@acme.com>" or "Walter, Sheltan [walter.sheltan@acme.com]"
     re.compile(r"^([^;].+?)\s?\n?\s*[\[|<](.+?)[\]|>]"),
 ]
 
-MAILBOX_ADDRESS = [re.compile(r"^(([^\s@]+)@([^\s@]+)\.*([^\s@]+))$")]
+MAILBOX_ADDRESS = [re.compile(r"^(([^\s@,;<>]+)@([^\s@,;<>]+)\.*([^\s@,;<>]+))$")]

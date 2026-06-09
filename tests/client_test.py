@@ -1,86 +1,125 @@
+from email import policy
+from email.message import EmailMessage
+from email.mime.message import MIMEMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.parser import Parser
+
 from emailforwardparser.client import EmailParserClient
+from emailforwardparser.forward_parser import MailboxResult
 
-# case 1: forwarded email
-# case 2: non-forwarded, eml containing email
-# case 3: non-forwarded, eml non-containing email
+FORWARDED_TEXT = """Hi team
 
-case_1 = """Content-Type: multipart/mixed; boundary="===============7483602508082330894=="
-MIME-Version: 1.0
-Date: Thu, Feb 15, 2024 at 5:23=E2=80=AFPM
-From: jon_doe@example.com
-Subject: Test Email
-To: mary_doe@example.com
+---------- Forwarded message ---------
+From: Jane Doe <jane@example.com>
+Date: Mon, 1 Jan 2024 at 12:00 PM
+Subject: Original subject
+To: Bob <bob@example.com>
 
---===============7483602508082330894==
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-
-Hello,
-This is a test email.
-Best,
-Jon
---===============7483602508082330894==
-Content-Type: text/html; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-<div dir=3D"ltr"><br><br><div class=3D"gmail_quote"><div dir=3D"ltr" class=
-=3D"gmail_attr">---------- Forwarded message ---------<br>From: <strong cla=
-ss=3D"gmail_sendername" dir=3D"auto">Jane Doe</strong> <span dir=3D"=
-auto">&lt;<a href=3D"mailto:jane_doe@example.com">jane_doe@example.com=
-</a>&gt;</span><br>Date: Thu, Feb 15, 2024 at 5:23=E2=80=AFPM<br>Subject: =
-Test Email<br>To: Mary Doe &lt;<a href=3D"mailto:mary_doe@example.co=
-m">marry_doe@example.com</a>&gt;<br></div><br><br><div dir=3D"ltr">Hello,=C2=A0=
-<div>This is a test email.</div><div>Best,=C2=A0</div><div>Jon</div></d=
-iv>
-</div></div>
-
---===============7483602508082330894==--"""
-
-case_2_3 = """MIME-Version: 1.0
-Date: Thu, 29 Feb 2024 14:51:03 -0800
-Message-ID: <CA+dFi1QfRrQtDX4HVPFavejbj6cVqCH6hufLfjgVFvwdophi7w@mail.example.com>
-Subject: blah
-From: Jane Doe <jane_doe@example.com>
-To: Jane Doe <jane_doe@example.com>, sally_doe@example.com
-Content-Type: multipart/alternative; boundary="00000000000013539606128d184f"
-
---00000000000013539606128d184f
-Content-Type: text/plain; charset="UTF-8"
-
-multiple to email
-
---00000000000013539606128d184f
-Content-Type: text/html; charset="UTF-8"
-
-<div dir="ltr">multiple to email</div>
-
---00000000000013539606128d184f--
+Original body.
 """
 
 
-def test_get_original_eml_case_1(mocker):
-    client = EmailParserClient()
-    mocker.patch("email.message.Message.as_string", return_value=case_1)
-    expected_send_to = "mary_doe@example.com"
-    data = client.get_original_eml_from_file("fixtures/forwarded.eml")
-    assert data["Send-To"] == expected_send_to
-    assert data["eml"] == case_1
+def parse_message(raw: str) -> EmailMessage:
+    return Parser(policy=policy.default).parsestr(raw)
 
 
-def test_get_original_eml_case_2(mocker):
-    client = EmailParserClient()
-    mocker.patch("email.message.Message.as_string", return_value=case_2_3)
-    expected_send_to = "jane_doe@example.com"
-    data = client.get_original_eml_from_file("fixtures/non_forwarded_eml_attached.eml")
-    assert data["Send-To"] == expected_send_to
-    assert data["eml"] == case_2_3
+def test_get_original_eml_rebuilds_forwarded_plain_text_message():
+    message = EmailMessage()
+    message["From"] = "Forwarder <forwarder@example.com>"
+    message["To"] = "parser@example.com"
+    message["Subject"] = "Fwd: Original subject"
+    message.set_content(FORWARDED_TEXT)
+
+    data = EmailParserClient().get_original_eml(message.as_string())
+    original = parse_message(data["eml"])
+
+    assert data["forward"] is True
+    assert data["Send-To"] == "forwarder@example.com"
+    assert str(original["Subject"]) == "Original subject"
+    assert str(original["From"]) == "Jane Doe <jane@example.com>"
+    assert str(original["To"]) == "Bob <bob@example.com>"
+    assert original.get_content().strip() == "Original body."
 
 
-def test_get_original_eml_case_3(mocker):
-    client = EmailParserClient()
-    mocker.patch("email.message.Message.as_string", return_value=case_2_3)
-    expected_send_to = "jane_doe@example.com"
-    data = client.get_original_eml_from_file("fixtures/nonforward.eml")
-    assert data["Send-To"] == expected_send_to
-    assert data["eml"] == case_2_3
+def test_get_original_metadata_decodes_quoted_printable_plain_text():
+    raw = """From: Forwarder <forwarder@example.com>
+To: parser@example.com
+Subject: Fwd: Original subject
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi=0A=0A---------- Forwarded message ---------=0AFrom: Jane Doe <jane@example.c=
+om>=0ADate: Mon, 1 Jan 2024 at 12:00 PM=0ASubject: Original subject=0ATo: Bob=
+ <bob@example.com>=0A=0AOriginal caf=C3=A9 body.=0A
+"""
+
+    result = EmailParserClient().get_original_metadata(raw)
+
+    assert result.forwarded is True
+    assert result.email.body == "Original caf\u00e9 body."
+    assert result.email.from_ == MailboxResult("Jane Doe", "jane@example.com")
+
+
+def test_get_original_metadata_from_file_uses_same_parser_path(tmp_path):
+    message = EmailMessage()
+    message["From"] = "Forwarder <forwarder@example.com>"
+    message["To"] = "parser@example.com"
+    message["Subject"] = "Fwd: Original subject"
+    message.set_content(FORWARDED_TEXT)
+    file_path = tmp_path / "forwarded.eml"
+    file_path.write_text(message.as_string(), encoding="utf8")
+
+    result = EmailParserClient().get_original_metadata_from_file(str(file_path))
+
+    assert result.forwarded is True
+    assert result.email.subject == "Original subject"
+    assert result.email.body == "Original body."
+
+
+def test_get_original_metadata_for_non_forwarded_message_uses_message_headers():
+    message = EmailMessage()
+    message["From"] = "Jane Doe <jane@example.com>"
+    message["To"] = "Bob <bob@example.com>"
+    message["Cc"] = "Copy <copy@example.com>"
+    message["Subject"] = "Plain subject"
+    message["Date"] = "Mon, 01 Jan 2024 12:00:00 +0000"
+    message.set_content("Plain body.")
+
+    result = EmailParserClient().get_original_metadata(message.as_string())
+
+    assert result.forwarded is False
+    assert result.email.subject == "Plain subject"
+    assert result.email.date == "Mon, 01 Jan 2024 12:00:00 +0000"
+    assert result.email.body == "Plain body."
+    assert result.email.from_ == MailboxResult("Jane Doe", "jane@example.com")
+    assert result.email.to == [MailboxResult("Bob", "bob@example.com")]
+    assert result.email.cc == [MailboxResult("Copy", "copy@example.com")]
+
+
+def test_get_original_eml_returns_attached_message_when_present():
+    attached = EmailMessage()
+    attached["From"] = "Jane Doe <jane@example.com>"
+    attached["To"] = "Bob <bob@example.com>"
+    attached["Subject"] = "Attached subject"
+    attached["Date"] = "Mon, 01 Jan 2024 12:00:00 +0000"
+    attached.set_content("Attached body.")
+
+    wrapper = MIMEMultipart()
+    wrapper["From"] = "Forwarder <forwarder@example.com>"
+    wrapper["To"] = "parser@example.com"
+    wrapper["Subject"] = "See attached"
+    wrapper.attach(MIMEText("Please see the attached email.", "plain", "utf-8"))
+    wrapper.attach(MIMEMessage(attached))
+
+    data = EmailParserClient().get_original_eml(wrapper.as_string())
+    metadata = EmailParserClient().get_original_metadata(wrapper.as_string())
+
+    assert data["forward"] is False
+    assert data["Send-To"] == "forwarder@example.com"
+    assert "Subject: Attached subject" in data["eml"]
+    assert metadata.forwarded is False
+    assert metadata.email.subject == "Attached subject"
+    assert metadata.email.body == "Attached body."
+    assert metadata.email.from_ == MailboxResult("Jane Doe", "jane@example.com")

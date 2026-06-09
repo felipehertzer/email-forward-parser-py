@@ -3,3 +3,11 @@ __pycache__/
 email_parser_venv/
 fixtures/
 setup.cfg
+.coverage
+.pytest_cache/
+.ruff_cache/
+.venv/
+.idea/
+build/
+dist/
+*.egg-info/

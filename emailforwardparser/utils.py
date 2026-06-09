@@ -1,33 +1,36 @@
 import email.header
 import unicodedata
+from re import Pattern
 
 
-def is_graphic(char):
+def is_graphic(char: str) -> bool:
     """Check if a character is a graphic character."""
-    return unicodedata.category(char) in {'L', 'M', 'N', 'P', 'S', 'Z'}
+    if char in {"\n", "\r", "\t"}:
+        return True
+    return unicodedata.category(char)[0] in {"L", "M", "N", "P", "S", "Z"}
 
 
 def preprocess_string(s: str) -> str:
-    s = ''.join(char for char in s if not is_graphic(char))
-    s = s.replace("\uFEFF", "")
+    s = "".join(char for char in s if is_graphic(char))
+    s = s.replace("\ufeff", "")
     s = str(email.header.make_header(email.header.decode_header(s)))
     return s
 
 
-def find_named_matches(pattern, s):
+def find_named_matches(pattern: Pattern[str], s: str) -> dict[str, str]:
     match = pattern.match(s)
     if match:
         return match.groupdict()
     return {}
 
 
-def find_all_string_submatch_index(pattern, s, n=-1):
-    matches = []
+def find_all_string_submatch_index(pattern: Pattern[str], s: str, n: int = -1) -> list[list[int]]:
+    matches: list[list[int]] = []
 
     for match in pattern.finditer(s):
         # Extracting the start and end indices of the match and all submatches
         # This is equivalent to flattening the match indices as done in the Go code
-        flat_indices = []
+        flat_indices: list[int] = []
         for group in range(len(match.groups()) + 1):  # +1 to include the whole match
             flat_indices.extend(match.span(group))
 
@@ -39,7 +42,7 @@ def find_all_string_submatch_index(pattern, s, n=-1):
     return matches
 
 
-def split_with_regexp(pattern, s):
+def split_with_regexp(pattern: Pattern[str], s: str) -> list[str]:
     # test = [match.span() for match in pattern.finditer(s)]
     split_indices = find_all_string_submatch_index(pattern, s)
 
@@ -47,18 +50,18 @@ def split_with_regexp(pattern, s):
         return [s]
 
     # if split_indices:
-        # print(f"splitIndices: {split_indices}")
+    # print(f"splitIndices: {split_indices}")
 
-    result = []
+    result: list[str] = []
     prev_index = 0
 
-    new_split_indices = []
+    new_split_indices: list[list[int]] = []
     for indices in split_indices:
         new_indicie = []
         for i in range(0, len(indices), 2):
             ia, ib = indices[i], indices[i + 1]
             if i > 0:
-                ya, yb = indices[i-2], indices[i-1]
+                ya, yb = indices[i - 2], indices[i - 1]
                 if ia == ya and ib == yb:
                     continue
             new_indicie.extend([ia, ib])

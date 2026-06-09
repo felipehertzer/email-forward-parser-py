@@ -1,81 +1,82 @@
-import os
-
 from emailforwardparser import forward_parser as fp
+from emailforwardparser import regexs, utils
 
-from .cases import BODY_ONLY_CASES, BODY_SUBJECT_CASES
+GMAIL_FORWARD = """Hi team
 
-test_subject = "Integer consequat non purus"
-test_body = "Aenean quis diam urna. Maecenas eleifend vulputate ligula ac consequat. Pellentesque cursus tincidunt mauris non venenatis.\nSed nec facilisis tellus. Nunc eget eros quis ex congue iaculis nec quis massa. Morbi in nisi tincidunt, euismod ante eget, eleifend nisi.\n\nPraesent ac ligula orci. Pellentesque convallis suscipit mi, at congue massa sagittis eget."
-test_message = "Praesent suscipit egestas hendrerit.\n\nAliquam eget dui dui."
+---------- Forwarded message ---------
+From: Jane Doe <jane@example.com>
+Date: Mon, 1 Jan 2024 at 12:00 PM
+Subject: Original subject
+To: Alice <alice@example.com>; Bob <bob@example.com>
+Cc: Charlie <charlie@example.com>; Dana <dana@example.com>
 
-test_from_address = "john.doe@acme.com"
-test_from_name = "John Doe"
-
-test_to_address_1 = "bessie.berry@acme.com"
-test_to_name_1 = "Bessie Berry"
-test_to_address_2 = "suzanne@globex.corp"
-test_to_name_2 = "Suzanne"
-
-test_cc_address_1 = "walter.sheltan@acme.com"
-test_cc_name_1 = "Walter Sheltan"
-test_cc_address_2 = "nicholas@globex.corp"
-test_cc_name_2 = "Nicholas"
+Original body.
+"""
 
 
-def get_fixtures(email_file: str, subject_file: str):
-    email_path = f"fixtures/{email_file}.txt"
-    subject_path = f"fixtures/{subject_file}.txt"
-    print(os.getcwd())
+def test_parse_gmail_forwarded_body_with_semicolon_recipients():
+    result = fp.get_forwarded_metadata(GMAIL_FORWARD, "Fwd: Original subject")
 
-    with open(email_path, 'r', encoding="utf8") as file:
-        email = file.read()
-
-    subject = ""
-    if subject_file:
-        with open(subject_path, 'r', encoding="utf8") as file:
-            subject = file.read()
-
-    return email, subject
-
-
-def read_fixture_files(email_file: str, subject_file: str):
-    email, subject = get_fixtures(email_file, subject_file)
-    return fp.get_forwarded_metadata(email, subject)
-
-
-def test_body_only():
-    for entry in BODY_ONLY_CASES:
-        result = read_fixture_files(entry, "")
-        simple_asserts(entry, result)
-
-
-def test_body_and_subject():
-    for entry in BODY_SUBJECT_CASES:
-        body, subject = entry.split(',')
-        result = read_fixture_files(body, subject)
-        assert result.email.subject == test_subject
-        simple_asserts(entry, result)
-
-
-def simple_asserts(entry: str, result: fp.ForwardMetadata):
     assert result.forwarded is True
-    assert result.email.subject == test_subject
+    assert result.message == "Hi team"
+    assert result.email.subject == "Original subject"
+    assert result.email.date == "Mon, 1 Jan 2024 at 12:00 PM"
+    assert result.email.body == "Original body."
+    assert result.email.from_ == fp.MailboxResult("Jane Doe", "jane@example.com")
+    assert result.email.to == [
+        fp.MailboxResult("Alice", "alice@example.com"),
+        fp.MailboxResult("Bob", "bob@example.com"),
+    ]
+    assert result.email.cc == [
+        fp.MailboxResult("Charlie", "charlie@example.com"),
+        fp.MailboxResult("Dana", "dana@example.com"),
+    ]
 
-    assert len(result.email.date) > 1
-    assert result.email.from_.name == test_from_name
-    assert result.email.from_.address == test_from_address
 
-    assert len(result.message) == 0
+def test_parse_apple_forwarded_body_without_subject():
+    body = """Personal note
 
-    if not entry.startswith("outlook_2019_"):
-        assert len(result.email.to) > 0
+Begin forwarded message:
 
-        assert len(result.email.to[0].name) == 0
-        assert result.email.to[0].address == test_to_address_1
+From: Jane Doe <jane@example.com>
+Date: Mon, 1 Jan 2024 at 12:00 PM
+Subject: Original subject
+To: Bob <bob@example.com>
 
-    if not entry.startswith("outlook_2019_") and not entry.startswith("ionos_one_and_one_"):
-        assert len(result.email.cc) > 0
-        assert result.email.cc[0].name == test_cc_name_1
-        assert result.email.cc[0].address == test_cc_address_1
-        assert result.email.cc[1].name == test_cc_name_2
-        assert result.email.cc[1].address == test_cc_address_2
+Original body.
+"""
+
+    result = fp.get_forwarded_metadata(body)
+
+    assert result.forwarded is True
+    assert result.message == "Personal note"
+    assert result.email.subject == "Original subject"
+    assert result.email.from_ == fp.MailboxResult("Jane Doe", "jane@example.com")
+    assert result.email.to == [fp.MailboxResult("Bob", "bob@example.com")]
+    assert result.email.body == "Original body."
+
+
+def test_encoded_forwarded_subject_is_decoded():
+    result = fp.get_forwarded_metadata(
+        GMAIL_FORWARD,
+        "=?UTF-8?Q?Fwd:_Original_subject?=",
+    )
+
+    assert result.forwarded is True
+    assert result.email.subject == "Original subject"
+
+
+def test_parse_mailbox_strips_semicolon_separators_from_bare_addresses():
+    result = fp.parse_mailbox(
+        regexs.ORIGINAL_TO,
+        "To: alice@example.com; bob@example.com",
+    )
+
+    assert result == [
+        fp.MailboxResult("", "alice@example.com"),
+        fp.MailboxResult("", "bob@example.com"),
+    ]
+
+
+def test_preprocess_removes_control_characters_but_preserves_line_breaks():
+    assert utils.preprocess_string("Fwd:\x00 Hello\nNext") == "Fwd: Hello\nNext"

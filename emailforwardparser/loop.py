@@ -1,7 +1,10 @@
+from re import Match, Pattern
+from typing import Sequence
+
 from .utils import split_with_regexp
 
 
-def loop_regexes_replace(regexes, string) -> str:
+def loop_regexes_replace(regexes: Sequence[Pattern[str]], string: str) -> str:
     match = string
     for regex in regexes:
         current_match = regex.sub("", string)
@@ -11,8 +14,10 @@ def loop_regexes_replace(regexes, string) -> str:
     return match
 
 
-def loop_regexes_split(regexes, string, highest_position):
-    match = []
+def loop_regexes_split(
+    regexes: Sequence[Pattern[str]], string: str, highest_position: bool
+) -> list[str]:
+    match: list[str] = []
     for regex in regexes:
         current_match = split_with_regexp(regex, string)
         if len(current_match) > 1:
@@ -25,14 +30,16 @@ def loop_regexes_split(regexes, string, highest_position):
     return match
 
 
-def loop_regexes_match(regexes, string):
+def loop_regexes_match(
+    regexes: Sequence[Pattern[str]], string: str
+) -> tuple[list[str], Pattern[str] | None]:
     # leave match a match object until we are returning, cleans up code
-    match = None
-    regex_matched = None
+    match: Match[str] | None = None
+    regex_matched: Pattern[str] | None = None
     match_index = 0
 
-    for re in regexes:
-        current_match = re.search(string)
+    for regex in regexes:
+        current_match = regex.search(string)
         if not current_match:  # style note
             continue
         current_match_index = current_match.start()
@@ -40,11 +47,10 @@ def loop_regexes_match(regexes, string):
         if match is None or current_match_index < match_index:
             match = current_match
             match_index = current_match_index
-            regex_matched = re
+            regex_matched = regex
 
     # Convert match from None to an empty list if no match is found
     if match is None:
-        match = []
+        return [], regex_matched
     else:
-        match = [match.group(0)] + list(match.groups())
-    return match, regex_matched
+        return [match.group(0), *[group or "" for group in match.groups()]], regex_matched

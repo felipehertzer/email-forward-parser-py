@@ -1,0 +1,9 @@
+email-forward-parser-py
+
+This project was originally created by Garrett Marking.
+
+This fork/package includes modifications by Felipe Hertzer, including packaging
+updates, MIME/client fixes, parser fixes, documentation, type checking, formatting
+configuration, and expanded test coverage.
+
+This product includes software developed under the Apache License, Version 2.0.
