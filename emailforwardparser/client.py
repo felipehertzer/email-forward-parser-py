@@ -1,18 +1,26 @@
 from __future__ import annotations
 
 import base64
-import logging
+import binascii
 from email import policy
 from email.message import EmailMessage, Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.parser import Parser
 from email.utils import formataddr, getaddresses
-from typing import Any
+from typing import TypedDict, cast
+
+import structlog
+from structlog.stdlib import BoundLogger
 
 from emailforwardparser import forward_parser as fp
 
-log = logging.getLogger("emailforwardparser")
+ParsedEmail = TypedDict(
+    "ParsedEmail",
+    {"forward": bool, "eml": str, "Send-To": str},
+)
+
+LOGGER = cast(BoundLogger, structlog.get_logger(__name__))
 
 
 class EmailParserClient:
@@ -20,7 +28,7 @@ class EmailParserClient:
     A client for parsing email messages, with support for detecting and handling forwarded emails.
     """
 
-    def get_original_eml(self, email: str) -> dict:
+    def get_original_eml(self, email: str) -> ParsedEmail:
         """
         Retrieve the original email message as a dict, including metadata and content.
 
@@ -41,7 +49,7 @@ class EmailParserClient:
             msg, original_metadata.email, original_metadata.forwarded, send_to=send_to
         )
 
-    def get_original_eml_from_file(self, file_path: str) -> dict:
+    def get_original_eml_from_file(self, file_path: str) -> ParsedEmail:
         """
         Retrieve the original email message, including metadata and content.
 
@@ -94,21 +102,15 @@ class EmailParserClient:
 
     def _get_dict(
         self, message: Message | str, email: fp.OriginalMetadata, forwarded: bool, send_to: str = ""
-    ) -> dict:
-        result: dict[str, Any] = {}
-        result["forward"] = forwarded
+    ) -> ParsedEmail:
         if forwarded:
             source_message = (
                 message if isinstance(message, Message) else self._parse_message(message)
             )
-            result["eml"] = self._build_original_email(email, source_message).as_string()
+            eml = self._build_original_email(email, source_message).as_string()
         else:
-            if isinstance(message, Message):
-                result["eml"] = message.as_string()
-            else:
-                result["eml"] = message
-        result["Send-To"] = send_to
-        return result
+            eml = message.as_string() if isinstance(message, Message) else message
+        return {"forward": forwarded, "eml": eml, "Send-To": send_to}
 
     def _build_original_email(
         self, metadata: fp.OriginalMetadata, message: Message
@@ -124,16 +126,20 @@ class EmailParserClient:
 
         mt = MIMEText(metadata.body or "", _subtype="plain", _charset="utf-8")
         result.attach(mt)
-        payload = message.get_payload()
-        if isinstance(payload, list):
-            for part in payload:
+        raw_payload = message.get_payload()
+        if isinstance(raw_payload, list):
+            pending = list(raw_payload)
+            while pending:
+                part = pending.pop(0)
                 if isinstance(part, str) or (
                     part.get_content_type() == "text/plain"
                     and "attachment" not in str(part.get("Content-Disposition"))
                 ):
                     continue
                 if part.get_content_subtype() in ["related", "alternative"]:
-                    payload.extend(part.get_payload())
+                    nested_payload = part.get_payload()
+                    if isinstance(nested_payload, list):
+                        pending.extend(nested_payload)
                     continue
                 if part.get_content_type() == "text/html":
                     part.set_payload(part.get_payload())
@@ -189,7 +195,7 @@ class EmailParserClient:
     def _get_eml_attachment(self, message: Message) -> str:
         for part in message.walk():
             content_type = part.get_content_type()
-            if content_type is not None and content_type == "message/rfc822":
+            if content_type == "message/rfc822":
                 try:
                     payload = part.get_payload()
                     if isinstance(payload, list) and payload:
@@ -203,10 +209,10 @@ class EmailParserClient:
                         content = get_content()
                         if isinstance(content, Message):
                             return content.as_string()
-                except Exception:
-                    log.warning("failed to get attached eml, looking for others")
+                except LookupError, TypeError, ValueError:
+                    LOGGER.warning("attached_eml_decode_failed")
                     continue
-            if content_type is not None and content_type == "application/octet-stream":
+            if content_type == "application/octet-stream":
                 file_name = part.get_filename()
                 if file_name and file_name.lower().endswith(".eml"):
                     payload = part.get_payload(decode=True)
@@ -217,7 +223,7 @@ class EmailParserClient:
         return ""
 
     def _get_file_content(self, file_path: str) -> str:
-        with open(file_path, "r", encoding="utf8") as file:
+        with open(file_path, encoding="utf8") as file:
             return file.read()
 
     def _parse_message(self, email: str) -> Message:
@@ -258,8 +264,8 @@ class EmailParserClient:
                     return content
                 if isinstance(content, bytes):
                     return self._decode_bytes(content, part.get_content_charset())
-            except Exception:
-                log.warning("failed to decode message part with email policy", exc_info=True)
+            except LookupError, TypeError, ValueError:
+                LOGGER.warning("message_part_decode_failed", exc_info=True)
 
         payload = part.get_payload(decode=True)
         if isinstance(payload, bytes):
@@ -278,13 +284,10 @@ class EmailParserClient:
             return ""
         if isinstance(s, bytes):
             return self._decode_bytes(s, charset)
-        if not isinstance(s, str):
-            return ""
-
         compact = "".join(s.split())
         try:
             return base64.b64decode(compact, validate=True).decode(
                 charset or "utf-8", errors="replace"
             )
-        except Exception:
+        except binascii.Error, LookupError, UnicodeDecodeError, ValueError:
             return s

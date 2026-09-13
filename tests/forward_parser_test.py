@@ -1,5 +1,4 @@
-from emailforwardparser import forward_parser as fp
-from emailforwardparser import regexs, utils
+from emailforwardparser import forward_parser as fp, regexs, utils
 
 GMAIL_FORWARD = """Hi team
 
@@ -14,7 +13,7 @@ Original body.
 """
 
 
-def test_parse_gmail_forwarded_body_with_semicolon_recipients():
+def test_parse_gmail_forwarded_body_with_semicolon_recipients() -> None:
     result = fp.get_forwarded_metadata(GMAIL_FORWARD, "Fwd: Original subject")
 
     assert result.forwarded is True
@@ -33,7 +32,7 @@ def test_parse_gmail_forwarded_body_with_semicolon_recipients():
     ]
 
 
-def test_parse_apple_forwarded_body_without_subject():
+def test_parse_apple_forwarded_body_without_subject() -> None:
     body = """Personal note
 
 Begin forwarded message:
@@ -56,7 +55,7 @@ Original body.
     assert result.email.body == "Original body."
 
 
-def test_encoded_forwarded_subject_is_decoded():
+def test_encoded_forwarded_subject_is_decoded() -> None:
     result = fp.get_forwarded_metadata(
         GMAIL_FORWARD,
         "=?UTF-8?Q?Fwd:_Original_subject?=",
@@ -66,7 +65,7 @@ def test_encoded_forwarded_subject_is_decoded():
     assert result.email.subject == "Original subject"
 
 
-def test_parse_mailbox_strips_semicolon_separators_from_bare_addresses():
+def test_parse_mailbox_strips_semicolon_separators_from_bare_addresses() -> None:
     result = fp.parse_mailbox(
         regexs.ORIGINAL_TO,
         "To: alice@example.com; bob@example.com",
@@ -78,5 +77,5 @@ def test_parse_mailbox_strips_semicolon_separators_from_bare_addresses():
     ]
 
 
-def test_preprocess_removes_control_characters_but_preserves_line_breaks():
+def test_preprocess_removes_control_characters_but_preserves_line_breaks() -> None:
     assert utils.preprocess_string("Fwd:\x00 Hello\nNext") == "Fwd: Hello\nNext"

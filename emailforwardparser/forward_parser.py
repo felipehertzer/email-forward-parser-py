@@ -6,7 +6,7 @@ from re import Pattern
 from emailforwardparser import loop, regexs, utils
 
 
-@dataclass
+@dataclass(slots=True)
 class MailboxResult:
     """Class storing the name and address of a mailbox."""
 
@@ -14,7 +14,7 @@ class MailboxResult:
     address: str = ""
 
 
-@dataclass
+@dataclass(slots=True)
 class ParseBodyResult:
     """Class storing metadata of parsed forwarded email."""
 
@@ -23,7 +23,7 @@ class ParseBodyResult:
     email: str = ""
 
 
-@dataclass
+@dataclass(slots=True)
 class OriginalMetadata:
     """Class storing metadata of original content in forwarded message."""
 
@@ -35,7 +35,7 @@ class OriginalMetadata:
     cc: list[MailboxResult] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(slots=True)
 class ForwardMetadata:
     """Result object storing forwarded email metadata."""
 
@@ -201,7 +201,7 @@ def parse_original_date(text: str, body: str) -> str:
     return ""
 
 
-def parse_mailbox(regexes: list[Pattern], text: str) -> list[MailboxResult]:
+def parse_mailbox(regexes: list[Pattern[str]], text: str) -> list[MailboxResult]:
     match, _ = loop.loop_regexes_match(regexes, text)
     if match:
         mailboxes_line = match[-1].strip()
