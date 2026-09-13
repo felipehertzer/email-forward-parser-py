@@ -43,29 +43,25 @@ def find_all_string_submatch_index(pattern: Pattern[str], s: str, n: int = -1) -
 
 
 def split_with_regexp(pattern: Pattern[str], s: str) -> list[str]:
-    # test = [match.span() for match in pattern.finditer(s)]
     split_indices = find_all_string_submatch_index(pattern, s)
 
     if not split_indices:
         return [s]
-
-    # if split_indices:
-    # print(f"splitIndices: {split_indices}")
 
     result: list[str] = []
     prev_index = 0
 
     new_split_indices: list[list[int]] = []
     for indices in split_indices:
-        new_indicie = []
+        new_indices: list[int] = []
         for i in range(0, len(indices), 2):
             ia, ib = indices[i], indices[i + 1]
             if i > 0:
                 ya, yb = indices[i - 2], indices[i - 1]
                 if ia == ya and ib == yb:
                     continue
-            new_indicie.extend([ia, ib])
-        new_split_indices.append(new_indicie)
+            new_indices.extend([ia, ib])
+        new_split_indices.append(new_indices)
 
     split_indices = new_split_indices
 

@@ -4,6 +4,7 @@ from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.parser import Parser
+from pathlib import Path
 
 from emailforwardparser.client import EmailParserClient
 from emailforwardparser.forward_parser import MailboxResult
@@ -24,7 +25,7 @@ def parse_message(raw: str) -> EmailMessage:
     return Parser(policy=policy.default).parsestr(raw)
 
 
-def test_get_original_eml_rebuilds_forwarded_plain_text_message():
+def test_get_original_eml_rebuilds_forwarded_plain_text_message() -> None:
     message = EmailMessage()
     message["From"] = "Forwarder <forwarder@example.com>"
     message["To"] = "parser@example.com"
@@ -42,7 +43,7 @@ def test_get_original_eml_rebuilds_forwarded_plain_text_message():
     assert original.get_content().strip() == "Original body."
 
 
-def test_get_original_metadata_decodes_quoted_printable_plain_text():
+def test_get_original_metadata_decodes_quoted_printable_plain_text() -> None:
     raw = """From: Forwarder <forwarder@example.com>
 To: parser@example.com
 Subject: Fwd: Original subject
@@ -62,7 +63,7 @@ om>=0ADate: Mon, 1 Jan 2024 at 12:00 PM=0ASubject: Original subject=0ATo: Bob=
     assert result.email.from_ == MailboxResult("Jane Doe", "jane@example.com")
 
 
-def test_get_original_metadata_from_file_uses_same_parser_path(tmp_path):
+def test_get_original_metadata_from_file_uses_same_parser_path(tmp_path: Path) -> None:
     message = EmailMessage()
     message["From"] = "Forwarder <forwarder@example.com>"
     message["To"] = "parser@example.com"
@@ -78,7 +79,7 @@ def test_get_original_metadata_from_file_uses_same_parser_path(tmp_path):
     assert result.email.body == "Original body."
 
 
-def test_get_original_metadata_for_non_forwarded_message_uses_message_headers():
+def test_get_original_metadata_for_non_forwarded_message_uses_message_headers() -> None:
     message = EmailMessage()
     message["From"] = "Jane Doe <jane@example.com>"
     message["To"] = "Bob <bob@example.com>"
@@ -98,7 +99,7 @@ def test_get_original_metadata_for_non_forwarded_message_uses_message_headers():
     assert result.email.cc == [MailboxResult("Copy", "copy@example.com")]
 
 
-def test_get_original_eml_returns_attached_message_when_present():
+def test_get_original_eml_returns_attached_message_when_present() -> None:
     attached = EmailMessage()
     attached["From"] = "Jane Doe <jane@example.com>"
     attached["To"] = "Bob <bob@example.com>"

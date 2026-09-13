@@ -1,5 +1,5 @@
+from collections.abc import Sequence
 from re import Match, Pattern
-from typing import Sequence
 
 from .utils import split_with_regexp
 
@@ -52,5 +52,4 @@ def loop_regexes_match(
     # Convert match from None to an empty list if no match is found
     if match is None:
         return [], regex_matched
-    else:
-        return [match.group(0), *[group or "" for group in match.groups()]], regex_matched
+    return [match.group(0), *[group or "" for group in match.groups()]], regex_matched
