@@ -347,6 +347,10 @@ ORIGINAL_SUBJECT_LAX = [
     re.compile(r"(?i)Konu\s?:(.+)"),
 ]
 
+# A line ending in "<" or "[" whose address continues on the next line (Gmail wraps long
+# "From:" lines this way).
+WRAPPED_ADDRESS_BRACKET = re.compile(r"([\[<])[ \t]*\r?\n[ \t]*")
+
 ORIGINAL_FROM = [
     # Apple Mail (en), Outlook Live / 365 (all locales), New Outlook 2019 (en), Thunderbird (da, en), Missive (en), HubSpot (en)
     re.compile(r"(?m)^(\*?\s*From\s?:\*?(.+))$"),
