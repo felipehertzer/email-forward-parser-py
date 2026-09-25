@@ -183,11 +183,8 @@ wheels = [
 name = "email-forward-parser"
 version = "0.2.0"
 source = { editable = "." }
-dependencies = [
-    { name = "structlog" },
-]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "black" },
     { name = "isort" },
@@ -196,24 +193,18 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
 ]
-test = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-]
 
 [package.metadata]
-requires-dist = [
-    { name = "black", marker = "extra == 'dev'", specifier = ">=26.3.1,<27" },
-    { name = "isort", marker = "extra == 'dev'", specifier = ">=9.0.1,<10" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.3,<3" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.1.1,<10" },
-    { name = "pytest", marker = "extra == 'test'", specifier = ">=9.1.1,<10" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7,<8" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=7,<8" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15,<1" },
-    { name = "structlog", specifier = ">=26.1,<27" },
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=26.3.1,<27" },
+    { name = "isort", specifier = ">=9.0.1,<10" },
+    { name = "mypy", specifier = ">=2.3,<3" },
+    { name = "pytest", specifier = ">=9.1.1,<10" },
+    { name = "pytest-cov", specifier = ">=7,<8" },
+    { name = "ruff", specifier = ">=0.15,<1" },
 ]
-provides-extras = ["dev", "test"]
 
 [[package]]
 name = "iniconfig"
@@ -492,15 +483,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ac/fe/734ec7527029ac757ecf821f143c9f3fcf69149c21f53a044a899b430f5a/ruff-0.16.9-py3-none-win32.whl", hash = "sha256:0e1dbc2073624dee6618d41d0098690a7244654af746704b64759e12b6b6b385", size = 10152355, upload-time = "2026-09-24T20:37:43.025Z" },
     { url = "https://files.pythonhosted.org/packages/14/21/26e4643629b3ebb44f0a06f9c9a53058d63d989415f63a9a3c28e2ee7f22/ruff-0.16.9-py3-none-win_amd64.whl", hash = "sha256:6bd40fec8cd4c8a3d4dd589bd8ad4e6320c13c29234159bfd959a40d529d597b", size = 10592965, upload-time = "2026-09-24T20:37:44.944Z" },
     { url = "https://files.pythonhosted.org/packages/51/60/5fb1a39dbb5ae314d5f59bc7348a63c1d5c20f3cd83914c4b5cb0be31d2d/ruff-0.16.9-py3-none-win_arm64.whl", hash = "sha256:ed1a252039200f57a59eebc063b54beabea67bfbaaca0eeaa7f54b5fbcda2284", size = 10458649, upload-time = "2026-09-24T20:37:46.882Z" },
-]
-
-[[package]]
-name = "structlog"
-version = "26.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5e/89/b4a0bcfdf4f71a3dea31379f095929613d7e4528a0996bca6aa964cd0dca/structlog-26.1.0.tar.gz", hash = "sha256:f63a716cbd1b1291cf7661de7794b455acfa4c43c5bcf1630e6ad5ddc1adb3b7", size = 1459881, upload-time = "2026-06-06T07:33:39.348Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a9/18/489c97b834dfff9cf2fc2507cede4bcd4b11e67f84bc462acd1992496f86/structlog-26.1.0-py3-none-any.whl", hash = "sha256:e081a26d6c373e6d201eca24eede26d8ffab07f88f477822e679183428d3d91e", size = 73764, upload-time = "2026-06-06T07:33:38.046Z" },
 ]
 
 [[package]]

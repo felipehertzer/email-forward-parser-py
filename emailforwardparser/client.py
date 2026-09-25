@@ -2,16 +2,14 @@ from __future__ import annotations
 
 import base64
 import binascii
+import logging
 from email import policy
 from email.message import EmailMessage, Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.parser import Parser
 from email.utils import formataddr, getaddresses
-from typing import TypedDict, cast
-
-import structlog
-from structlog.stdlib import BoundLogger
+from typing import TypedDict
 
 from emailforwardparser import forward_parser as fp
 
@@ -20,7 +18,7 @@ ParsedEmail = TypedDict(
     {"forward": bool, "eml": str, "Send-To": str},
 )
 
-LOGGER = cast(BoundLogger, structlog.get_logger(__name__))
+LOGGER = logging.getLogger(__name__)
 
 
 class EmailParserClient:
