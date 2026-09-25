@@ -7,8 +7,11 @@ QUOTE_LINE_BREAK_OPTIONAL = re.compile(r"(?m)^(>+)=20?$")
 QUOTE_LINE_BREAK = re.compile(r"(?m)^(>+)\s?$")
 QUOTE = re.compile(r"(?m)^(>+)\s?")
 FOUR_SPACES = re.compile(r"(?m)^(\ {4})\s?")
-CARRIAGE_RETURN = re.compile(r"(?m)\r\n")
-BYTE_ORDER_MARK = re.compile(r"(?m)\xFEFF")
+# CRLF or a lone CR. A lone CR left in the text would end up inside a parsed
+# header value (".+" matches it) instead of ending the line.
+CARRIAGE_RETURN = re.compile(r"\r\n?")
+# U+FEFF. "\xFEFF" would be the two-digit escape \xFE followed by a literal "FF".
+BYTE_ORDER_MARK = re.compile(r"\uFEFF")
 TRAILING_NON_BREAKING_SPACE = re.compile(r"(?m)\xA0$")
 NON_BREAKING_SPACE = re.compile(r"(?m)\xA0")
 
@@ -49,55 +52,55 @@ SUBJECT = [
 
 SEPARATOR = [
     # Apple Mail (en)
-    re.compile(r"(?m)^>?\s*Begin forwarded message\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Begin forwarded message\s?:"),
     # Apple Mail (cs)
-    re.compile(r"(?m)^>?\s*Začátek přeposílané zprávy\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Začátek přeposílané zprávy\s?:"),
     # Apple Mail (da)
-    re.compile(r"(?m)^>?\s*Start på videresendt besked\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Start på videresendt besked\s?:"),
     # Apple Mail (de)
-    re.compile(r"(?m)^>?\s*Anfang der weitergeleiteten Nachricht\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Anfang der weitergeleiteten Nachricht\s?:"),
     # Apple Mail (es)
-    re.compile(r"(?m)^>?\s*Inicio del mensaje reenviado\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Inicio del mensaje reenviado\s?:"),
     # Apple Mail (fi)
-    re.compile(r"(?m)^>?\s*Välitetty viesti alkaa\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Välitetty viesti alkaa\s?:"),
     # Apple Mail (fr)
-    re.compile(r"(?m)^>?\s*Début du message réexpédié\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Début du message réexpédié\s?:"),
     # Apple Mail iOS (fr)
-    re.compile(r"(?m)^>?\s*Début du message transféré\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Début du message transféré\s?:"),
     # Apple Mail (hr)
-    re.compile(r"(?m)^>?\s*Započni proslijeđenu poruku\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Započni proslijeđenu poruku\s?:"),
     # Apple Mail (hu)
-    re.compile(r"(?m)^>?\s*Továbbított levél kezdete\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Továbbított levél kezdete\s?:"),
     # Apple Mail (it)
-    re.compile(r"(?m)^>?\s*Inizio messaggio inoltrato\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Inizio messaggio inoltrato\s?:"),
     # Apple Mail (nl)
-    re.compile(r"(?m)^>?\s*Begin doorgestuurd bericht\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Begin doorgestuurd bericht\s?:"),
     # Apple Mail (no)
-    re.compile(r"(?m)^>?\s*Videresendt melding\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Videresendt melding\s?:"),
     # Apple Mail (pl)
-    re.compile(r"(?m)^>?\s*Początek przekazywanej wiadomości\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Początek przekazywanej wiadomości\s?:"),
     # Apple Mail (pt)
-    re.compile(r"(?m)^>?\s*Início da mensagem reencaminhada\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Início da mensagem reencaminhada\s?:"),
     # Apple Mail (pt-br)
-    re.compile(r"(?m)^>?\s*Início da mensagem encaminhada\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Início da mensagem encaminhada\s?:"),
     # Apple Mail (ro)
-    re.compile(r"(?m)^>?\s*Începe mesajul redirecționat\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Începe mesajul redirecționat\s?:"),
     # Apple Mail (ro)
-    re.compile(r"(?m)^>?\s*Начало переадресованного сообщения\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Начало переадресованного сообщения\s?:"),
     # Apple Mail (sk)
-    re.compile(r"(?m)^>?\s*Začiatok preposlanej správy\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Začiatok preposlanej správy\s?:"),
     # Apple Mail (sv),
-    re.compile(r"(?m)^>?\s*Vidarebefordrat mejl\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Vidarebefordrat mejl\s?:"),
     # Apple Mail (tr)
-    re.compile(r"(?m)^>?\s*İleti başlangıcı\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)İleti başlangıcı\s?:"),
     # Apple Mail (uk)
-    re.compile(r"(?m)^>?\s*Початок листа, що пересилається\s?:"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)Початок листа, що пересилається\s?:"),
     # Gmail (all locales), Missive (en), HubSpot (en)
-    re.compile(r"(?m)^\s*-{8,10}\s*Forwarded message\s*-{8,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{8,10}\s*Forwarded message\s*-{8,10}\s*"),
     # Outlook Live / 365 (all locales)
-    re.compile(r"(?m)^\s*_{32}\s*$"),
+    re.compile(r"(?m)^[^\S\n]*_{32}\s*$"),
     # Outlook 2019 (cz)
-    re.compile(r"(?m)^\s?Dne\s?.+\,\s?.+\s*[\[|<].+[\]|>]\s?napsal\(a\)\s?:"),
+    re.compile(r"(?m)^\s?Dne\s?.+\,\s?.+(?:\n\s*)?[\[|<].+[\]|>]\s?napsal\(a\)\s?:"),
     # Outlook 2019 (da)
     re.compile(r"(?m)^\s?D.\s?.+\s?skrev\s?\".+\"\s*[\[|<].+[\]|>]\s?:"),
     # Outlook 2019 (de)
@@ -109,15 +112,15 @@ SEPARATOR = [
     # Outlook 2019 (fr)
     re.compile(r"(?m)^\s?Le\s?.+\,\s?«.+»\s*[\[|<].+[\]|>]\s?a écrit\s?:"),
     # Outlook 2019 (fi)
-    re.compile(r"(?m)^\s?.+\s*[\[|<].+[\]|>]\s?kirjoitti\s?.+\s?:"),
+    re.compile(r"(?m)^\s?.+(?:\n\s*)?[\[|<].+[\]|>]\s?kirjoitti\s?.+\s?:"),
     # Outlook 2019 (hu)
-    re.compile(r"(?m)^\s?.+\s?időpontban\s?.+\s*[\[|<|(].+[\]|>|)]\s?ezt írta\s?:"),
+    re.compile(r"(?m)^\s?.+\s?időpontban\s?.+(?:\n\s*)?[\[|<|(].+[\]|>|)]\s?ezt írta\s?:"),
     # Outlook 2019 (it)
     re.compile(r"(?m)^\s?Il giorno\s?.+\s?\".+\"\s*[\[|<].+[\]|>]\s?ha scritto\s?:"),
     # Outlook 2019 (nl)
-    re.compile(r"(?m)^\s?Op\s?.+\s?heeft\s?.+\s*[\[|<].+[\]|>]\s?geschreven\s?:"),
+    re.compile(r"(?m)^\s?Op\s?.+\s?heeft\s?.+(?:\n\s*)?[\[|<].+[\]|>]\s?geschreven\s?:"),
     # Outlook 2019 (no)
-    re.compile(r"(?m)^\s?.+\s*[\[|<].+[\]|>]\s?skrev følgende den\s?.+\s?:"),
+    re.compile(r"(?m)^\s?.+(?:\n\s*)?[\[|<].+[\]|>]\s?skrev følgende den\s?.+\s?:"),
     # Outlook 2019 (pl)
     re.compile(r"(?m)^\s?Dnia\s?.+\s?„.+”\s*[\[|<].+[\]|>]\s?napisał\s?:"),
     # Outlook 2019 (pt)
@@ -125,81 +128,81 @@ SEPARATOR = [
     # Outlook 2019 (ru)
     re.compile(r"(?m)^\s?.+\s?пользователь\s?\".+\"\s*[\[|<].+[\]|>]\s?написал\s?:"),
     # Outlook 2019 (sk)
-    re.compile(r"(?m)^\s?.+\s?používateľ\s?.+\s*\([\[|<].+[\]|>]\)\s?napísal\s?:"),
+    re.compile(r"(?m)^\s?.+\s?používateľ\s?.+(?:\n\s*)?\([\[|<].+[\]|>]\)\s?napísal\s?:"),
     # Outlook 2019 (sv)
     re.compile(r"(?m)^\s?Den\s?.+\s?skrev\s?\".+\"\s*[\[|<].+[\]|>]\s?följande\s?:"),
     # Outlook 2019 (tr)
     re.compile(r"(?m)^\s?\".+\"\s*[\[|<].+[\]|>]\,\s?.+\s?tarihinde şunu yazdı\s?:"),
     # Yahoo Mail (cs), Thunderbird (cs)
-    re.compile(r"(?m)^\s*-{5,8} Přeposlaná zpráva -{5,8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,8} Přeposlaná zpráva -{5,8}\s*"),
     # Yahoo Mail (da), Thunderbird (da)
-    re.compile(r"(?m)^\s*-{5,8} Videresendt meddelelse -{5,8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,8} Videresendt meddelelse -{5,8}\s*"),
     # Yahoo Mail (de), Thunderbird (de), HubSpot (de)
-    re.compile(r"(?m)^\s*-{5,10} Weitergeleitete Nachricht -{5,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,10} Weitergeleitete Nachricht -{5,10}\s*"),
     # Yahoo Mail (en), Thunderbird (en)
-    re.compile(r"(?m)^\s*-{5,8} Forwarded Message -{5,8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,8} Forwarded Message -{5,8}\s*"),
     # Yahoo Mail (es), Thunderbird (es), HubSpot (es)
-    re.compile(r"(?m)^\s*-{5,10} Mensaje reenviado -{5,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,10} Mensaje reenviado -{5,10}\s*"),
     # Yahoo Mail (fi), HubSpot (fi)
-    re.compile(r"(?m)^\s*-{5,10} Edelleenlähetetty viesti -{5,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,10} Edelleenlähetetty viesti -{5,10}\s*"),
     # Yahoo Mail (fr)
-    re.compile(r"(?m)^\s*-{5} Message transmis -{5}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5} Message transmis -{5}\s*"),
     # Yahoo Mail (hu), Thunderbird (hu)
-    re.compile(r"(?m)^\s*-{5,8} Továbbított üzenet -{5,8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,8} Továbbított üzenet -{5,8}\s*"),
     # Yahoo Mail (it), HubSpot (it)
-    re.compile(r"(?m)^\s*-{5,10} Messaggio inoltrato -{5,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,10} Messaggio inoltrato -{5,10}\s*"),
     # Yahoo Mail (nl), Thunderbird (nl), HubSpot (nl)
-    re.compile(r"(?m)^\s*-{5,10} Doorgestuurd bericht -{5,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,10} Doorgestuurd bericht -{5,10}\s*"),
     # Yahoo Mail (no), Thunderbird (no)
-    re.compile(r"(?m)^\s*-{5,8} Videresendt melding -{5,8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,8} Videresendt melding -{5,8}\s*"),
     # Yahoo Mail (pl)
-    re.compile(r"(?m)^\s*-{5} Przekazana wiadomość -{5}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5} Przekazana wiadomość -{5}\s*"),
     # Yahoo Mail (pt), Thunderbird (pt)
-    re.compile(r"(?m)^\s*-{5,8} Mensagem reencaminhada -{5,8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,8} Mensagem reencaminhada -{5,8}\s*"),
     # Yahoo Mail (pt-br), Thunderbird (pt-br), HubSpot (pt-br)
-    re.compile(r"(?m)^\s*-{5,10} Mensagem encaminhada -{5,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,10} Mensagem encaminhada -{5,10}\s*"),
     # Yahoo Mail (ro)
-    re.compile(r"(?m)^\s*-{5,8} Mesaj redirecționat -{5,8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,8} Mesaj redirecționat -{5,8}\s*"),
     # Yahoo Mail (ru)
-    re.compile(r"(?m)^\s*-{5} Пересылаемое сообщение -{5}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5} Пересылаемое сообщение -{5}\s*"),
     # Yahoo Mail (sk)
-    re.compile(r"(?m)^\s*-{5} Preposlaná správa -{5}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5} Preposlaná správa -{5}\s*"),
     # Yahoo Mail (sv), Thunderbird (sv), HubSpot (sv)
-    re.compile(r"(?m)^\s*-{5,10} Vidarebefordrat meddelande -{5,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5,10} Vidarebefordrat meddelande -{5,10}\s*"),
     # Yahoo Mail (tr)
-    re.compile(r"(?m)^\s*-{5} İletilmiş Mesaj -{5}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5} İletilmiş Mesaj -{5}\s*"),
     # Yahoo Mail (uk)
-    re.compile(r"(?m)^\s*-{5} Перенаправлене повідомлення -{5}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{5} Перенаправлене повідомлення -{5}\s*"),
     # Thunderbird (fi)
-    re.compile(r"(?m)^\s*-{8} Välitetty viesti \/ Fwd.Msg -{8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{8} Välitetty viesti \/ Fwd.Msg -{8}\s*"),
     # Thunderbird (fr), HubSpot (fr)
-    re.compile(r"(?m)^\s*-{8,10} Message transféré -{8,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{8,10} Message transféré -{8,10}\s*"),
     # Thunderbird (hr)
-    re.compile(r"(?m)^\s*-{8} Proslijeđena poruka -{8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{8} Proslijeđena poruka -{8}\s*"),
     # Thunderbird (it)
-    re.compile(r"(?m)^\s*-{8} Messaggio Inoltrato -{8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{8} Messaggio Inoltrato -{8}\s*"),
     # Thunderbird (pl)
-    re.compile(r"(?m)^\s*-{3} Treść przekazanej wiadomości -{3}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{3} Treść przekazanej wiadomości -{3}\s*"),
     # Thunderbird (ru)
-    re.compile(r"(?m)^\s*-{8} Перенаправленное сообщение -{8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{8} Перенаправленное сообщение -{8}\s*"),
     # Thunderbird (sk)
-    re.compile(r"(?m)^\s*-{8} Preposlaná správa --- Forwarded Message -{8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{8} Preposlaná správa --- Forwarded Message -{8}\s*"),
     # Thunderbird (tr)
-    re.compile(r"(?m)^\s*-{8} İletilen İleti -{8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{8} İletilen İleti -{8}\s*"),
     # Thunderbird (uk)
-    re.compile(r"(?m)^\s*-{8} Переслане повідомлення -{8}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{8} Переслане повідомлення -{8}\s*"),
     # HubSpot (ja)
-    re.compile(r"(?m)^\s*-{9,10} メッセージを転送 -{9,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{9,10} メッセージを転送 -{9,10}\s*"),
     # HubSpot (pl)
-    re.compile(r"(?m)^\s*-{9,10} Wiadomość przesłana dalej -{9,10}\s*"),
+    re.compile(r"(?m)^[^\S\n]*-{9,10} Wiadomość przesłana dalej -{9,10}\s*"),
     # IONOS by 1 & 1 (en)
-    re.compile(r"(?m)^>?\s*-{10} Original Message -{10}\s*"),
+    re.compile(r"(?m)^(?:>\s*|[^\S\n]*)-{10} Original Message -{10}\s*"),
 ]
 
 SEPARATOR_WITH_INFORMATION = [
     # Outlook 2019 (cz)
     re.compile(
-        r"(?m)^\s?Dne\s?(?P<date>.+)\,\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?napsal\(a\)\s?:"
+        r"(?m)^\s?Dne\s?(?P<date>.+)\,\s?(?P<from_name>.+)(?:\n\s*)?[\[|<](?P<from_address>.+)[\]|>]\s?napsal\(a\)\s?:"
     ),
     # Outlook 2019 (da)
     re.compile(
@@ -223,11 +226,11 @@ SEPARATOR_WITH_INFORMATION = [
     ),
     # Outlook 2019 (fi)
     re.compile(
-        r"(?m)^\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?kirjoitti\s?(?P<date>.+)\s?:"
+        r"(?m)^\s?(?P<from_name>.+)(?:\n\s*)?[\[|<](?P<from_address>.+)[\]|>]\s?kirjoitti\s?(?P<date>.+)\s?:"
     ),
     # Outlook 2019 (hu)
     re.compile(
-        r"(?m)^\s?(?P<date>.+)\s?időpontban\s?(?P<from_name>.+)\s*[\[|<|(](?P<from_address>.+)[\]|>|)]\s?ezt írta\s?:"
+        r"(?m)^\s?(?P<date>.+)\s?időpontban\s?(?P<from_name>.+)(?:\n\s*)?[\[|<|(](?P<from_address>.+)[\]|>|)]\s?ezt írta\s?:"
     ),
     # Outlook 2019 (it)
     re.compile(
@@ -235,11 +238,11 @@ SEPARATOR_WITH_INFORMATION = [
     ),
     # Outlook 2019 (nl)
     re.compile(
-        r"(?m)^\s?Op\s?(?P<date>.+)\s?heeft\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?geschreven\s?:"
+        r"(?m)^\s?Op\s?(?P<date>.+)\s?heeft\s?(?P<from_name>.+)(?:\n\s*)?[\[|<](?P<from_address>.+)[\]|>]\s?geschreven\s?:"
     ),
     # Outlook 2019 (no)
     re.compile(
-        r"(?m)^\s?(?P<from_name>.+)\s*[\[|<](?P<from_address>.+)[\]|>]\s?skrev følgende den\s?(?P<date>.+)\s?:"
+        r"(?m)^\s?(?P<from_name>.+)(?:\n\s*)?[\[|<](?P<from_address>.+)[\]|>]\s?skrev følgende den\s?(?P<date>.+)\s?:"
     ),
     # Outlook 2019 (pl)
     re.compile(
@@ -255,7 +258,7 @@ SEPARATOR_WITH_INFORMATION = [
     ),
     # Outlook 2019 (sk)
     re.compile(
-        r"(?m)^\s?(?P<date>.+)\s?používateľ\s?(?P<from_name>.+)\s*\([\[|<](?P<from_address>.+)[\]|>]\)\s?napísal\s?:"
+        r"(?m)^\s?(?P<date>.+)\s?používateľ\s?(?P<from_name>.+)(?:\n\s*)?\([\[|<](?P<from_address>.+)[\]|>]\)\s?napísal\s?:"
     ),
     # Outlook 2019 (sv)
     re.compile(
@@ -353,342 +356,342 @@ WRAPPED_ADDRESS_BRACKET = re.compile(r"([\[<])[ \t]*\r?\n[ \t]*")
 
 ORIGINAL_FROM = [
     # Apple Mail (en), Outlook Live / 365 (all locales), New Outlook 2019 (en), Thunderbird (da, en), Missive (en), HubSpot (en)
-    re.compile(r"(?m)^(\*?\s*From\s?:\*?(.+))$"),
+    re.compile(r"(?m)^((?:\*\s*|[^\S\n]*)From\s?:\*?(.+))$"),
     # Apple Mail (cs, pl, sk), Gmail (cs, pl, sk), New Outlook 2019 (cs, pl, sk), Thunderbird (cs, sk), HubSpot (pl)
-    re.compile(r"(?m)^(\s*Od\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Od\s?:(.+))$"),
     # Apple Mail (da, no), Gmail (da, no), New Outlook 2019 (da), Thunderbird (no)
-    re.compile(r"(?m)^(\s*Fra\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Fra\s?:(.+))$"),
     # Apple Mail (de), Gmail (de), New Outlook 2019 (de), Thunderbird (de), HubSpot (de)
-    re.compile(r"(?m)^(\s*Von\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Von\s?:(.+))$"),
     # Apple Mail (es, fr, pt, pt-br), Gmail (es, fr, pt, pt-br), New Outlook 2019 (es, fr, pt, pt-br), Thunderbird (fr, pt, pt-br), HubSpot (es, fr, pt-br)
-    re.compile(r"(?m)^(\s*De\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*De\s?:(.+))$"),
     # Apple Mail (fi), Gmail (fi), New Outlook 2019 (fi), Thunderbird (fi), HubSpot (fi)
-    re.compile(r"(?m)^(\s*Lähettäjä\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Lähettäjä\s?:(.+))$"),
     # Apple Mail (hr), Gmail (hr), Thunderbird (hr)
-    re.compile(r"(?m)^(\s*Šalje\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Šalje\s?:(.+))$"),
     # Apple Mail (hu), Gmail (hu), New Outlook 2019 (fr), Thunderbird (hu)
-    re.compile(r"(?m)^(\s*Feladó\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Feladó\s?:(.+))$"),
     # Apple Mail (it), Gmail (it), New Outlook 2019 (it), HubSpot (it)
-    re.compile(r"(?m)^(\s*Da\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Da\s?:(.+))$"),
     # Apple Mail (nl), Gmail (nl), New Outlook 2019 (nl), Thunderbird (nl), HubSpot (nl)
-    re.compile(r"(?m)^(\s*Van\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Van\s?:(.+))$"),
     # Apple Mail (ro)
-    re.compile(r"(?m)^(\s*Expeditorul\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Expeditorul\s?:(.+))$"),
     # Apple Mail (ru)
-    re.compile(r"(?m)^(\s*Отправитель\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Отправитель\s?:(.+))$"),
     # Apple Mail (sv), Gmail (sv), New Outlook 2019 (sv), Thunderbird (sv), HubSpot (sv)
-    re.compile(r"(?m)^(\s*Från\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Från\s?:(.+))$"),
     # Apple Mail (tr), Thunderbird (tr)
-    re.compile(r"(?m)^(\s*Kimden\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Kimden\s?:(.+))$"),
     # Apple Mail (uk)
-    re.compile(r"(?m)^(\s*Від кого\s`?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Від кого\s?:(.+))$"),
     # Gmail (et)
-    re.compile(r"(?m)^(\s*Saatja\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Saatja\s?:(.+))$"),
     # Gmail (ro)
-    re.compile(r"(?m)^(\s*De la\s`?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*De la\s?:(.+))$"),
     # Gmail (tr)
-    re.compile(r"(?m)^(\s*Gönderen\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Gönderen\s?:(.+))$"),
     # Gmail (ru), New Outlook 2019 (ru), Thunderbird (ru)
-    re.compile(r"(?m)^(\s*От\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*От\s?:(.+))$"),
     # Gmail (uk), Thunderbird (uk)
-    re.compile(r"(?m)^(\s*Від\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Від\s?:(.+))$"),
     # Thunderbird (it)
-    re.compile(r"(?m)^(\s*Mittente\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Mittente\s?:(.+))$"),
     # Thunderbird (pl)
-    re.compile(r"(?m)^(\s*Nadawca\s?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*Nadawca\s?:(.+))$"),
     # Thunderbird (ro)
-    re.compile(r"(?m)^(\s*de la\s`?:(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*de la\s?:(.+))$"),
     # HubSpot (ja)
-    re.compile(r"(?m)^(\s*送信元：(.+))$"),
+    re.compile(r"(?m)^([^\S\n]*送信元：(.+))$"),
 ]
 
 ORIGINAL_FROM_LAX = [
     # Yahoo Mail (en)
-    re.compile(r"(\s*From\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?From\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (cs, pl, sk)
-    re.compile(r"(\s*Od\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Od\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (da, no)
-    re.compile(r"(\s*Fra\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Fra\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (de)
-    re.compile(r"(\s*Von\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Von\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (es, fr, pt, pt-br)
-    re.compile(r"(\s*De\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?De\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (fi)
-    re.compile(r"(\s*Lähettäjä\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Lähettäjä\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (hu)
-    re.compile(r"(\s*Feladó\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Feladó\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (it)
-    re.compile(r"(\s*Da\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Da\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (nl)
-    re.compile(r"(\s*Van\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Van\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (ro)
-    re.compile(r"(\s*De la\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?De la\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (ru)
-    re.compile(r"(\s*От\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?От\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (sv)
-    re.compile(r"(\s*Från\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Från\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (tr)
-    re.compile(r"(\s*Kimden\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Kimden\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
     # Yahoo Mail (uk)
-    re.compile(r"(\s*Від\s?:(.+?)\s?\n?\s*[\[|<](.+?)[\]|>])"),
+    re.compile(r"((?:(?<!\s)\s*)?Від\s?:([^\S\n]|.+?(?<!\s))\s*[\[|<](.+?)[\]|>])"),
 ]
 
 ORIGINAL_TO = [
     # Apple Mail (en), Gmail (all locales), Outlook Live / 365 (all locales), Thunderbird (da, en), Missive (en), HubSpot (en)
-    re.compile(r"(?m)^\*?\s*To\s?:\*?(.+)$"),
+    re.compile(r"(?m)^(?:\*\s*|[^\S\n]*)To\s?:\*?(.+)$"),
     # Apple Mail (cs), New Outlook 2019 (cs, sk), Thunderbird (cs)
-    re.compile(r"(?m)^\s*Komu\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Komu\s?:(.+)$"),
     # Apple Mail (da, no), New Outlook 2019 (da), Thunderbird (no)
-    re.compile(r"(?m)^\s*Til\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Til\s?:(.+)$"),
     # Apple Mail (de), New Outlook 2019 (de), Thunderbird (de), HubSpot (de)
-    re.compile(r"(?m)^\s*An\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*An\s?:(.+)$"),
     # Apple Mail (es, pt, pt-br), New Outlook 2019 (es, pt, pt-br), Thunderbird (es, pt, pt-br), HubSpot (pt-br)
-    re.compile(r"(?m)^\s*Para\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Para\s?:(.+)$"),
     # Apple Mail (fi), New Outlook 2019 (fi), Thunderbird (fi), HubSpot (fi)
-    re.compile(r"(?m)^\s*Vastaanottaja\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Vastaanottaja\s?:(.+)$"),
     # Apple Mail (fr), New Outlook 2019 (fr), HubSpot (fr)
-    re.compile(r"(?m)^\s*À\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*À\s?:(.+)$"),
     # Apple Mail (hr), Thunderbird (hr)
-    re.compile(r"(?m)^\s*Prima\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Prima\s?:(.+)$"),
     # Apple Mail (hu), New Outlook 2019 (hu), Thunderbird (hu)
-    re.compile(r"(?m)^\s*Címzett\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Címzett\s?:(.+)$"),
     # Apple Mail (it), New Outlook 2019 (it), Thunderbird (it), HubSpot (es, it)
-    re.compile(r"(?m)^\s*A\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*A\s?:(.+)$"),
     # Apple Mail (nl), New Outlook 2019 (nl), Thunderbird (nl), HubSpot (nl)
-    re.compile(r"(?m)^\s*Aan\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Aan\s?:(.+)$"),
     # Apple Mail (pl), New Outlook 2019 (pl), HubSpot (pl)
-    re.compile(r"(?m)^\s*Do\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Do\s?:(.+)$"),
     # Apple Mail (ro)
-    re.compile(r"(?m)^\s*Destinatarul\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Destinatarul\s?:(.+)$"),
     # Apple Mail (ru, uk), New Outlook 2019 (ru), Thunderbird (ru, uk)
-    re.compile(r"(?m)^\s*Кому\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Кому\s?:(.+)$"),
     # Apple Mail (sk), Thunderbird (sk)
-    re.compile(r"(?m)^\s*Pre\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Pre\s?:(.+)$"),
     # Apple Mail (sv), New Outlook 2019 (sv), Thunderbird (sv)
-    re.compile(r"(?m)^\s*Till\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Till\s?:(.+)$"),
     # Apple Mail (tr), Thunderbird (tr)
-    re.compile(r"(?m)^\s*Kime\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Kime\s?:(.+)$"),
     # Thunderbird (fr)
-    re.compile(r"(?m)^\s*Pour\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Pour\s?:(.+)$"),
     # Thunderbird (pl)
-    re.compile(r"(?m)^\s*Adresat\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Adresat\s?:(.+)$"),
     # HubSpot (ja)
-    re.compile(r"(?m)^\s*送信先：(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*送信先：(.+)$"),
 ]
 
 ORIGINAL_TO_LAX = [
     # Yahook Mail (en)
-    re.compile(r"(?m)\s*To\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?To\s?:(.+)$"),
     # Yahook Mail (cs, sk)
-    re.compile(r"(?m)\s*Komu\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Komu\s?:(.+)$"),
     # Yahook Mail (da, no, sv)
-    re.compile(r"(?m)\s*Til\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Til\s?:(.+)$"),
     # Yahook Mail (de)
-    re.compile(r"(?m)\s*An\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?An\s?:(.+)$"),
     # Yahook Mail (es, pt, pt-br)
-    re.compile(r"(?m)\s*Para\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Para\s?:(.+)$"),
     # Yahook Mail (fi)
-    re.compile(r"(?m)\s*Vastaanottaja\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Vastaanottaja\s?:(.+)$"),
     # Yahook Mail (fr)
-    re.compile(r"(?m)\s*À\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?À\s?:(.+)$"),
     # Yahook Mail (hu)
-    re.compile(r"(?m)\s*Címzett\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Címzett\s?:(.+)$"),
     # Yahook Mail (it)
-    re.compile(r"(?m)\s*A\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?A\s?:(.+)$"),
     # Yahook Mail (nl)
-    re.compile(r"(?m)\s*Aan\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Aan\s?:(.+)$"),
     # Yahook Mail (pl)
-    re.compile(r"(?m)\s*Do\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Do\s?:(.+)$"),
     # Yahook Mail (ro), Thunderbird (ro)
-    re.compile(r"(?m)\s*Către\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Către\s?:(.+)$"),
     # Yahook Mail (ru, uk)
-    re.compile(r"(?m)\s*Кому\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Кому\s?:(.+)$"),
     # Yahook Mail (sv)
-    re.compile(r"(?m)\s*Till\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Till\s?:(.+)$"),
     # Yahook Mail (tr)
-    re.compile(r"(?m)\s*Kime\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Kime\s?:(.+)$"),
 ]
 
 ORIGINAL_REPLY_TO = [
     # Apple Mail (en)
-    re.compile(r"(?m)^\s*Reply-To\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Reply-To\s?:(.+)$"),
     # Apple Mail (hr)
-    re.compile(r"(?m)^\s*Odgovori na\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Odgovori na\s?:(.+)$"),
     # Apple Mail (cs)
-    re.compile(r"(?m)^\s*Odpověď na\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Odpověď na\s?:(.+)$"),
     # Apple Mail (da)
-    re.compile(r"(?m)^\s*Svar til\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Svar til\s?:(.+)$"),
     # Apple Mail (nl)
-    re.compile(r"(?m)^\s*Antwoord aan\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Antwoord aan\s?:(.+)$"),
     # Apple Mail (fi)
-    re.compile(r"(?m)^\s*Vastaus\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Vastaus\s?:(.+)$"),
     # Apple Mail (fr)
-    re.compile(r"(?m)^\s*Répondre à\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Répondre à\s?:(.+)$"),
     # Apple Mail (de)
-    re.compile(r"(?m)^\s*Antwort an\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Antwort an\s?:(.+)$"),
     # Apple Mail (hu)
-    re.compile(r"(?m)^\s*Válaszcím\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Válaszcím\s?:(.+)$"),
     # Apple Mail (it)
-    re.compile(r"(?m)^\s*Rispondi a\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Rispondi a\s?:(.+)$"),
     # Apple Mail (no)
-    re.compile(r"(?m)^\s*Svar til\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Svar til\s?:(.+)$"),
     # Apple Mail (pl)
-    re.compile(r"(?m)^\s*Odpowiedź-do\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Odpowiedź-do\s?:(.+)$"),
     # Apple Mail (pt)
-    re.compile(r"(?m)^\s*Responder A\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Responder A\s?:(.+)$"),
     # Apple Mail (pt-br, es)
-    re.compile(r"(?m)^\s*Responder a\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Responder a\s?:(.+)$"),
     # Apple Mail (ro)
-    re.compile(r"(?m)^\s*Răspuns către\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Răspuns către\s?:(.+)$"),
     # Apple Mail (ru)
-    re.compile(r"(?m)^\s*Ответ-Кому\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Ответ-Кому\s?:(.+)$"),
     # Apple Mail (sk)
-    re.compile(r"(?m)^\s*Odpovedať-Pre\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Odpovedať-Pre\s?:(.+)$"),
     # Apple Mail (sv)
-    re.compile(r"(?m)^\s*Svara till\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Svara till\s?:(.+)$"),
     # Apple Mail (tr)
-    re.compile(r"(?m)^\s*Yanıt Adresi\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Yanıt Adresi\s?:(.+)$"),
     # Apple Mail (uk)
-    re.compile(r"(?m)^\s*Кому відповісти\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Кому відповісти\s?:(.+)$"),
 ]
 
 ORIGINAL_CC = [
     # Apple Mail (en, da, es, fr, hr, it, pt, pt-br, ro, sk), Gmail (all locales), Outlook Live / 365 (all locales),
     # New Outlook 2019 (da, de, en, fr, it, pt-br), Missive (en), HubSpot (de, en, es, it, nl, pt-br)
-    re.compile(r"(?m)^\*?\s*Cc\s?:\*?(.+)$"),
+    re.compile(r"(?m)^(?:\*\s*|[^\S\n]*)Cc\s?:\*?(.+)$"),
     # New Outlook 2019 (es, nl, pt), Thunderbird (da, en, es, fi, hr, hu, it, nl, no, pt, pt-br, ro, tr, uk)
-    re.compile(r"(?m)^\s*CC\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*CC\s?:(.+)$"),
     # Apple Mail (cs, de, nl), New Outlook 2019 (cs), Thunderbird (cs)
-    re.compile(r"(?m)^\s*Kopie\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Kopie\s?:(.+)$"),
     # Apple Mail (fi), New Outlook 2019 (fi), HubSpot (fi)
-    re.compile(r"(?m)^\s*Kopio\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Kopio\s?:(.+)$"),
     # Apple Mail (hu)
-    re.compile(r"(?m)^\s*Másolat\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Másolat\s?:(.+)$"),
     # Apple Mail (no)
-    re.compile(r"(?m)^\s*Kopi\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Kopi\s?:(.+)$"),
     # Apple Mail (pl)
-    re.compile(r"(?m)^\s*Dw\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Dw\s?:(.+)$"),
     # Apple Mail (ru), New Outlook 2019 (ru), Thunderbird (ru)
-    re.compile(r"(?m)^\s*Копия\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Копия\s?:(.+)$"),
     # Apple Mail (sv), New Outlook 2019 (sv), Thunderbird (pl, sv), HubSpot (sv)
-    re.compile(r"(?m)^\s*Kopia\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Kopia\s?:(.+)$"),
     # Apple Mail (tr)
-    re.compile(r"(?m)^\s*Bilgi\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Bilgi\s?:(.+)$"),
     # Apple Mail (uk),
-    re.compile(r"(?m)^\s*Копія\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Копія\s?:(.+)$"),
     # New Outlook 2019 (hu)
-    re.compile(r"(?m)^\s*Másolatot kap\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Másolatot kap\s?:(.+)$"),
     # New Outlook 2019 (sk), Thunderbird (sk)
-    re.compile(r"(?m)^\s*Kópia\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Kópia\s?:(.+)$"),
     # New Outlook 2019 (pl), HubSpot (pl)
-    re.compile(r"(?m)^\s*DW\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*DW\s?:(.+)$"),
     # Thunderbird (de)
-    re.compile(r"(?m)^\s*Kopie \(CC\)\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Kopie \(CC\)\s?:(.+)$"),
     # Thunderbird (fr)
-    re.compile(r"(?m)^\s*Copie à\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Copie à\s?:(.+)$"),
     # HubSpot (ja)
-    re.compile(r"(?m)^\s*CC：(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*CC：(.+)$"),
 ]
 
 ORIGINAL_CC_LAX = [
     # Yahoo Mail (da, en, it, nl, pt, pt-br, ro, tr)
-    re.compile(r"(?m)\s*Cc\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Cc\s?:(.+)$"),
     # Yahoo Mail (de, es)
-    re.compile(r"(?m)\s*CC\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?CC\s?:(.+)$"),
     # Yahoo Mail (cs)
-    re.compile(r"(?m)\s*Kopie\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Kopie\s?:(.+)$"),
     # Yahoo Mail (fi)
-    re.compile(r"(?m)\s*Kopio\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Kopio\s?:(.+)$"),
     # Yahoo Mail (hu)
-    re.compile(r"(?m)\s*Másolat\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Másolat\s?:(.+)$"),
     # Yahoo Mail (no)
-    re.compile(r"(?m)\s*Kopi\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Kopi\s?:(.+)$"),
     # Yahoo Mail (pl)
-    re.compile(r"(?m)\s*Dw\s?(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Dw\s?:(.+)$"),
     # Yahoo Mail (ru)
-    re.compile(r"(?m)\s*Копия\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Копия\s?:(.+)$"),
     # Yahoo Mail (sk)
-    re.compile(r"(?m)\s*Kópia\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Kópia\s?:(.+)$"),
     # Yahoo Mail (sv)
-    re.compile(r"(?m)\s*Kopia\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Kopia\s?:(.+)$"),
     # Yahoo Mail (uk)
-    re.compile(r"(?m)\s*Копія\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Копія\s?:(.+)$"),
 ]
 
 ORIGINAL_DATE = [
     # Apple Mail (en, fr), Gmail (all locales), New Outlook 2019 (en, fr), Thunderbird (da, en, fr), Missive (en), HubSpot (en, fr)
-    re.compile(r"(?m)^\s*Date\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Date\s?:(.+)$"),
     # Apple Mail (cs, de, hr, nl, sv), New Outlook 2019 (cs, de, nl, sv), Thunderbird (cs, de, hr, nl, sv), HubSpot (de, nl, sv)
-    re.compile(r"(?m)^\s*Datum\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Datum\s?:(.+)$"),
     # Apple Mail (da, no), New Outlook 2019 (da), Thunderbird (no)
-    re.compile(r"(?m)^\s*Dato\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Dato\s?:(.+)$"),
     # New Outlook 2019 (fr)
-    re.compile(r"(?m)^\s*Envoyé\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Envoyé\s?:(.+)$"),
     # Apple Mail (es), New Outlook 2019 (es), Thunderbird (es), HubSpot (es)
-    re.compile(r"(?m)^\s*Fecha\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Fecha\s?:(.+)$"),
     # Apple Mail (fi), New Outlook 2019 (fi), HubSpot (fi)
-    re.compile(r"(?m)^\s*Päivämäärä\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Päivämäärä\s?:(.+)$"),
     # Apple Mail (hu, sk), New Outlook 2019 (sk), Thunderbird (hu, sk)
-    re.compile(r"(?m)^\s*Dátum\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Dátum\s?:(.+)$"),
     # Apple Mail (it, pl, pt, pt-br), New Outlook 2019 (it, pl, pt, pt-br), Thunderbird (it, pl, pt, pt-br), HubSpot (it, pl, pt-br)
-    re.compile(r"(?m)^\s*Data\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Data\s?:(.+)$"),
     # Apple Mail (ro), Thunderbird (ro)
-    re.compile(r"(?m)^\s*Dată\s?:(.+)$"),
-    re.compile(r"(?m)^\s*Дата\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Dată\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Дата\s?:(.+)$"),
     # Apple Mail (ru, uk), New Outlook 2019 (ru), Thunderbird (ru, uk)
-    re.compile(r"(?m)^\s*Tarih\s?:(.+)$"),  # Apple Mail (tr), Thunderbird (tr)
+    re.compile(r"(?m)^[^\S\n]*Tarih\s?:(.+)$"),  # Apple Mail (tr), Thunderbird (tr)
     # Outlook Live / 365 (all locales)
-    re.compile(r"(?m)^\*?\s*Sent\s?:\*?(.+)$"),
+    re.compile(r"(?m)^(?:\*\s*|[^\S\n]*)Sent\s?:\*?(.+)$"),
     # Thunderbird (fi)
-    re.compile(r"(?m)^\s*Päiväys\s?:(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*Päiväys\s?:(.+)$"),
     # HubSpot (ja)
-    re.compile(r"(?m)^\s*日付：(.+)$"),
+    re.compile(r"(?m)^[^\S\n]*日付：(.+)$"),
 ]
 
 ORIGINAL_DATE_LAX = [
     # Yahoo Mail (cs)
-    re.compile(r"(?m)\s*Datum\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Datum\s?:(.+)$"),
     # Yahoo Mail (da, no)
-    re.compile(r"(?m)\s*Sendt\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Sendt\s?:(.+)$"),
     # Yahoo Mail (de)
-    re.compile(r"(?m)\s*Gesendet\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Gesendet\s?:(.+)$"),
     # Yahoo Mail (en)
-    re.compile(r"(?m)\s*Sent\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Sent\s?:(.+)$"),
     # Yahoo Mail (es, pt, pt-br)
-    re.compile(r"(?m)\s*Enviado\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Enviado\s?:(.+)$"),
     # Yahoo Mail (fr)
-    re.compile(r"(?m)\s*Envoyé\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Envoyé\s?:(.+)$"),
     # Yahoo Mail (fi)
-    re.compile(r"(?m)\s*Lähetetty\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Lähetetty\s?:(.+)$"),
     # Yahoo Mail (hu)
-    re.compile(r"(?m)\s*Elküldve\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Elküldve\s?:(.+)$"),
     # Yahoo Mail (it)
-    re.compile(r"(?m)\s*Inviato\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Inviato\s?:(.+)$"),
     # Yahoo Mail (it)
-    re.compile(r"(?m)\s*Verzonden\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Verzonden\s?:(.+)$"),
     # Yahoo Mail (pl)
-    re.compile(r"(?m)\s*Wysłano\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Wysłano\s?:(.+)$"),
     # Yahoo Mail (ro)
-    re.compile(r"(?m)\s*Trimis\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Trimis\s?:(.+)$"),
     # Yahoo Mail (ru)
-    re.compile(r"(?m)\s*Отправлено\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Отправлено\s?:(.+)$"),
     # Yahoo Mail (sk)
-    re.compile(r"(?m)\s*Odoslané\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Odoslané\s?:(.+)$"),
     # Yahoo Mail (sv)
-    re.compile(r"(?m)\s*Skickat\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Skickat\s?:(.+)$"),
     # Yahoo Mail (tr)
-    re.compile(r"(?m)\s*Gönderilen\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Gönderilen\s?:(.+)$"),
     # Yahoo Mail (uk)
-    re.compile(r"(?m)\s*Відправлено\s?:(.+)$"),
+    re.compile(r"(?m)(?:(?<!\s)\s*)?Відправлено\s?:(.+)$"),
 ]
 
 MAILBOX = [
     # "<walter.sheltan@acme.com<mailto:walter.sheltan@acme.com>>"
-    re.compile(r"^\s?\n?\s*<.+?<mailto\:(.+?)>>"),
+    re.compile(r"^\s?\n?\s*<[^<>]+?<mailto\:(.+?)>>"),
     # "Walter Sheltan <walter.sheltan@acme.com<mailto:walter.sheltan@acme.com>>"
-    re.compile(r"^(.+?)\s?\n?\s*<.+?<mailto\:(.+?)>>"),
+    re.compile(r"^([^\S\n]|.+?(?<!\s))\s*<[^<>]+?<mailto\:(.+?)>>"),
     # "Walter Sheltan <mailto:walter.sheltan@acme.com>" or "Walter Sheltan [mailto:walter.sheltan@acme.com]" or "walter.sheltan@acme.com <mailto:walter.sheltan@acme.com>"
-    re.compile(r"^(.+?)\s?\n?\s*[\[|<]mailto\:(.+?)[\]|>]"),
+    re.compile(r"^([^\S\n]|.+?(?<!\s))\s*[\[|<]mailto\:(.+?)[\]|>]"),
     # "'Walter Sheltan' <walter.sheltan@acme.com>" or "'Walter Sheltan' [walter.sheltan@acme.com]" or "'walter.sheltan@acme.com' <walter.sheltan@acme.com>"
     re.compile(r"^\'(.+?)\'\s?\n?\s*[\[|<](.+?)[\]|>]"),
     # ""'Walter Sheltan'" <walter.sheltan@acme.com>" or ""'Walter Sheltan'" [walter.sheltan@acme.com]" or ""'walter.sheltan@acme.com'" <walter.sheltan@acme.com>"
@@ -696,13 +699,13 @@ MAILBOX = [
     # ""Walter Sheltan" <walter.sheltan@acme.com>" or ""Walter Sheltan" [walter.sheltan@acme.com]" or ""walter.sheltan@acme.com" <walter.sheltan@acme.com>"
     re.compile(r"^\"(.+?)\"\s?\n?\s*[\[|<](.+?)[\]|>]"),
     # "Walter Sheltan <walter.sheltan@acme.com>" or "Walter Sheltan [walter.sheltan@acme.com]" or "walter.sheltan@acme.com <walter.sheltan@acme.com>"
-    re.compile(r"^([^,;]+?)\s?\n?\s*[\[|<](.+?)[\]|>]"),
+    re.compile(r"^(\s|[^,;]+?(?<!\s))\s*[\[|<](.+?)[\]|>]"),
     # "<walter.sheltan@acme.com>"
     re.compile(r"^(.?)\s?\n?\s*[\[|<](.+?)[\]|>]"),
     # "walter.sheltan@acme.com"
     re.compile(r"^([^\s@,;]+@[^\s@,;]+\.[^\s@,;]+)"),
     # "Walter, Sheltan <walter.sheltan@acme.com>" or "Walter, Sheltan [walter.sheltan@acme.com]"
-    re.compile(r"^([^;].+?)\s?\n?\s*[\[|<](.+?)[\]|>]"),
+    re.compile(r"^([^;](?:[^\S\n]|.+?(?<!\s)))\s*[\[|<](.+?)[\]|>]"),
 ]
 
-MAILBOX_ADDRESS = [re.compile(r"^(([^\s@,;<>]+)@([^\s@,;<>]+)\.*([^\s@,;<>]+))$")]
+MAILBOX_ADDRESS = [re.compile(r"^(([^\s@,;<>]+)@([^\s@,;<>]{2,}))$")]

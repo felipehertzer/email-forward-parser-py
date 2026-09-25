@@ -67,7 +67,10 @@ def parse_body(body: str, forwarded: bool) -> ParseBodyResult:
     if forwarded:
         match = loop.loop_regexes_split(regexs.ORIGINAL_FROM, body, True)
         if len(match) > 2:
-            email = "".join(match[i] for i in [1, 3])
+            # match[1] is the whole From line and match[3] the text after it. The
+            # split omits an empty trailing piece, so a body that ends on the From
+            # line has no match[3].
+            email = match[1] + (match[3] if len(match) > 3 else "")
             return ParseBodyResult(body=body, message=match[0].strip(), email=email.strip())
     return ParseBodyResult()
 
@@ -82,7 +85,10 @@ def parse_original_body(text: str) -> str:
 
     for regex in regexes:
         match = loop.loop_regexes_split(regex, text, True)
-        if len(match) > 3 and match[3].startswith("\n\n"):
+        # match[3] is the text after the header line, or, when the header occurs
+        # again (len(match) > 4), the gap before that next occurrence. Blank lines
+        # alone between two occurrences are not a body.
+        if len(match) > 3 and match[3].startswith("\n\n") and (len(match) == 4 or match[3].strip()):
             body = match[3]
             return body.strip()
     match = loop.loop_regexes_split(

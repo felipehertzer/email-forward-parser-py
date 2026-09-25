@@ -148,17 +148,22 @@ class EmailParserClient:
 
     def _set_headers(self, metadata: fp.OriginalMetadata, result: EmailMessage | Message) -> None:
         if metadata.date:
-            result["Date"] = metadata.date
+            result["Date"] = self._header_value(metadata.date)
         from_header = self._format_addresses([metadata.from_])
         if from_header:
-            result["From"] = from_header
+            result["From"] = self._header_value(from_header)
         if metadata.subject:
-            result["Subject"] = metadata.subject
+            result["Subject"] = self._header_value(metadata.subject)
         to_header = self._format_addresses(metadata.to)
         if to_header:
-            result["To"] = to_header
+            result["To"] = self._header_value(to_header)
         if metadata.cc:
-            result["CC"] = self._format_addresses(metadata.cc)
+            result["CC"] = self._header_value(self._format_addresses(metadata.cc))
+
+    def _header_value(self, value: str) -> str:
+        # Parsed values come from message text, which may hold any Unicode line
+        # break (for example U+2028); a header value must be a single line.
+        return " ".join(value.splitlines())
 
     def _format_addresses(self, contacts: list[fp.MailboxResult]) -> str:
         addresses = []
@@ -277,7 +282,12 @@ class EmailParserClient:
         return payload if isinstance(payload, str) else ""
 
     def _decode_bytes(self, payload: bytes, charset: str | None = None) -> str:
-        return payload.decode(charset or "utf-8", errors="replace")
+        try:
+            return payload.decode(charset or "utf-8", errors="replace")
+        except LookupError, UnicodeError:
+            # The sender declared a charset Python does not know (for example
+            # "unknown-8bit") or a codec that is not a text encoding.
+            return payload.decode("utf-8", errors="replace")
 
     def get_decoded_str(self, s: str | bytes | None, charset: str | None = None) -> str:
         if s is None:
@@ -286,8 +296,6 @@ class EmailParserClient:
             return self._decode_bytes(s, charset)
         compact = "".join(s.split())
         try:
-            return base64.b64decode(compact, validate=True).decode(
-                charset or "utf-8", errors="replace"
-            )
-        except binascii.Error, LookupError, UnicodeDecodeError, ValueError:
+            return self._decode_bytes(base64.b64decode(compact, validate=True), charset)
+        except binascii.Error, ValueError:
             return s

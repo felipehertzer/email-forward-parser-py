@@ -18,7 +18,7 @@ need to recover the original sender, recipients, subject, sent date, and body.
   `.eml` attachments.
 - Rebuilds an `.eml` string for the original message when a forwarded email is
   detected.
-- Ships with a 100% statement coverage gate.
+- Ships with a 100% statement and branch coverage gate.
 
 ## Installation
 
@@ -26,7 +26,7 @@ need to recover the original sender, recipients, subject, sent date, and body.
 python -m pip install email-forward-parser
 ```
 
-Python 3.10 or newer is required.
+Python 3.14 or newer is required.
 
 The distribution name is `email-forward-parser`, but the import package is
 `emailforwardparser`:
@@ -304,7 +304,7 @@ python -m mypy
 python -m pytest
 ```
 
-`pytest` is configured to require 100% statement coverage.
+`pytest` is configured to require 100% statement and branch coverage.
 
 ## Release
 

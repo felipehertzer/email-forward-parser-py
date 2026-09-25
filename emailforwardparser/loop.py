@@ -48,6 +48,9 @@ def loop_regexes_match(
             match = current_match
             match_index = current_match_index
             regex_matched = regex
+            if match_index == 0:
+                # No later regex can match earlier, and ties keep the first one.
+                break
 
     # Convert match from None to an empty list if no match is found
     if match is None:

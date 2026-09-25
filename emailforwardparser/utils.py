@@ -1,6 +1,14 @@
+import email.errors
 import email.header
+import re
 import unicodedata
-from re import Pattern
+from re import Match, Pattern
+
+# A run of RFC 2047 encoded words ("=?utf-8?q?caf=C3=A9?="), where adjacent words
+# may be separated by spaces or tabs that are not part of the decoded text. The
+# encoded text cannot contain "?" and a word never spans lines.
+_ENCODED_WORD = r"=\?[^?\s]+\?[bBqQ]\?[^?\n]*\?="
+ENCODED_WORDS = re.compile(rf"{_ENCODED_WORD}(?:[ \t]*{_ENCODED_WORD})*")
 
 
 def is_graphic(char: str) -> bool:
@@ -10,11 +18,25 @@ def is_graphic(char: str) -> bool:
     return unicodedata.category(char)[0] in {"L", "M", "N", "P", "S", "Z"}
 
 
+def decode_encoded_words(match: Match[str]) -> str:
+    """Decode one run of encoded words, or keep it verbatim when it cannot be decoded."""
+    words = match.group(0)
+    try:
+        return "".join(
+            part.decode(charset or "ascii", errors="replace") if isinstance(part, bytes) else part
+            for part, charset in email.header.decode_header(words)
+        )
+    except LookupError, UnicodeError, email.errors.HeaderParseError:
+        return words
+
+
 def preprocess_string(s: str) -> str:
     s = "".join(char for char in s if is_graphic(char))
     s = s.replace("\ufeff", "")
-    s = str(email.header.make_header(email.header.decode_header(s)))
-    return s
+    # Decode encoded words in place. email.header.decode_header() on the whole
+    # text would join every line into one (so no line-anchored pattern could
+    # match) and raises on an unknown charset or invalid bytes.
+    return ENCODED_WORDS.sub(decode_encoded_words, s)
 
 
 def find_named_matches(pattern: Pattern[str], s: str) -> dict[str, str]:
