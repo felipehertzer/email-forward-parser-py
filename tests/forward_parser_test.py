@@ -102,3 +102,38 @@ def test_parse_mailbox_strips_semicolon_separators_from_bare_addresses() -> None
 
 def test_preprocess_removes_control_characters_but_preserves_line_breaks() -> None:
     assert utils.preprocess_string("Fwd:\x00 Hello\nNext") == "Fwd: Hello\nNext"
+
+
+def test_parse_forwarded_body_keeps_name_only_from_line() -> None:
+    body = """FYI
+
+________________________________
+From: Smith, John
+Sent: Sunday, 13 September 2026 11:34
+To: Me
+Subject: Original subject
+
+Original body.
+"""
+    result = fp.get_forwarded_metadata(body, "Fwd: Original subject")
+
+    assert result.forwarded is True
+    assert result.email.from_ == fp.MailboxResult("Smith, John", "")
+
+
+def test_parse_forwarded_body_with_wrapped_from_line_without_address() -> None:
+    body = """FYI
+
+---------- Forwarded message ---------
+From: Some Very Long Display Name <
+not an address>
+Date: Sun, 13 Sept 2026 at 11:34
+Subject: Original subject
+To: <me@example.com>
+
+Original body.
+"""
+    result = fp.get_forwarded_metadata(body, "Fwd: Original subject")
+
+    assert result.forwarded is True
+    assert result.email.from_ == fp.MailboxResult("Some Very Long Display Name", "")

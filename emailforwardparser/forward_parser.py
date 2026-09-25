@@ -135,7 +135,7 @@ def parse_original_from(text: str, body: str) -> MailboxResult:
                 retry = parse_mailbox(regexs.ORIGINAL_FROM, joined)
                 if retry and retry[0].address:
                     return retry[0]
-            return prepare_mailbox(author.name.rstrip("<[ "), "")
+            return MailboxResult(author.name.rstrip("<[ ").strip(), "")
 
     match, pattern = loop.loop_regexes_match(regexs.SEPARATOR_WITH_INFORMATION, body)
     if len(match) == 4 and pattern is not None:
