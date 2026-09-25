@@ -122,8 +122,20 @@ def parse_original_from(text: str, body: str) -> MailboxResult:
 
     if authors:
         author = authors[0]
-        if author.name or author.address:
+        if author.address:
             return author
+        if author.name:
+            # Some clients (e.g. Gmail) wrap a long "From:" line right after the "<",
+            # leaving the address on the next line. Rejoin such lines and retry before
+            # settling for a name without an address.
+            for candidate in (text, body):
+                joined = regexs.WRAPPED_ADDRESS_BRACKET.sub(r"\1", candidate)
+                if joined == candidate:
+                    continue
+                retry = parse_mailbox(regexs.ORIGINAL_FROM, joined)
+                if retry and retry[0].address:
+                    return retry[0]
+            return MailboxResult(author.name.rstrip("<[ ").strip(), "")
 
     match, pattern = loop.loop_regexes_match(regexs.SEPARATOR_WITH_INFORMATION, body)
     if len(match) == 4 and pattern is not None:
