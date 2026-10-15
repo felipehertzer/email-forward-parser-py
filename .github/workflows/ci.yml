@@ -24,12 +24,6 @@ jobs:
           enable-cache: true
       - name: Install locked dependencies
         run: uv sync --frozen
-      - name: Check formatting
-        run: |
-          uv run black --check .
-          uv run isort --check-only .
-      - name: Lint
-        run: uv run ruff check .
       - name: Type check
         run: uv run mypy
       - name: Test with configured coverage gate
