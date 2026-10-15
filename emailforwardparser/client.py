@@ -4,6 +4,8 @@ import base64
 import binascii
 import logging
 from email import policy
+from email.errors import HeaderParseError
+from email.header import decode_header, make_header
 from email.message import EmailMessage, Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -38,7 +40,7 @@ class EmailParserClient:
         :rtype: dict
         """
         msg = self._parse_message(email)
-        send_to = self._first_header_address(msg.get("From", ""))
+        send_to = self._first_header_address(self._header(msg, "From"))
         eml = self._get_eml_attachment(msg)
         if eml:
             return self._get_dict(eml, fp.OriginalMetadata(), False, send_to=send_to)
@@ -107,8 +109,19 @@ class EmailParserClient:
             )
             eml = self._build_original_email(email, source_message).as_string()
         else:
-            eml = message.as_string() if isinstance(message, Message) else message
+            eml = self._as_string(message) if isinstance(message, Message) else message
         return {"forward": forwarded, "eml": eml, "Send-To": send_to}
+
+    @staticmethod
+    def _as_string(message: Message) -> str:
+        """The message as text. A header longer than a line is folded again as it is written,
+        which builds its mailboxes again and refuses (ValueError) one whose encoded-word name
+        decodes to a line break: the message is then written with its headers as they came.
+        """
+        try:
+            return message.as_string()
+        except ValueError:
+            return message.as_string(policy=policy.default.clone(refold_source="none"))
 
     def _build_original_email(
         self, metadata: fp.OriginalMetadata, message: Message
@@ -176,8 +189,7 @@ class EmailParserClient:
 
     def _get_forwarded_metadata(self, message: Message) -> fp.ForwardMetadata:
         body = self._get_body(message)
-        subject = message.get("Subject")
-        subject = str(subject) if subject is not None else ""
+        subject = self._header(message, "Subject")
         if subject:
             return fp.get_forwarded_metadata(body.strip(), subject.strip())
         return fp.get_forwarded_metadata(body.strip())
@@ -233,15 +245,38 @@ class EmailParserClient:
         return Parser(policy=policy.default).parsestr(email)
 
     def _get_message_metadata(self, message: Message) -> fp.OriginalMetadata:
-        from_mailboxes = self._mailboxes_from_header(message.get("From", ""))
+        from_mailboxes = self._mailboxes_from_header(self._header(message, "From"))
         return fp.OriginalMetadata(
-            date=str(message.get("Date", "")).strip(),
-            subject=str(message.get("Subject", "")).strip(),
+            date=self._header(message, "Date").strip(),
+            subject=self._header(message, "Subject").strip(),
             body=self._get_body(message).strip(),
             from_=from_mailboxes[0] if from_mailboxes else fp.MailboxResult(),
-            to=self._mailboxes_from_header(message.get("To", "")),
-            cc=self._mailboxes_from_header(message.get("Cc", "")),
+            to=self._mailboxes_from_header(self._header(message, "To")),
+            cc=self._mailboxes_from_header(self._header(message, "Cc")),
         )
+
+    @staticmethod
+    def _header(message: Message, name: str) -> str:
+        """The header's decoded value, or "" when the message has none.
+
+        The email package builds an address header's mailboxes as it reads it, and refuses
+        (ValueError) one whose encoded-word name decodes to a line break, so reading such a
+        From raised out of the parser. Its mailboxes are read from the raw value instead,
+        each name decoded with its line breaks as spaces.
+        """
+        try:
+            value = message.get(name)
+        except ValueError:
+            raw = next(str(raw) for key, raw in message.raw_items() if key.lower() == name.lower())
+            mailboxes = []
+            for encoded_name, address in getaddresses([raw]):
+                try:
+                    decoded = str(make_header(decode_header(encoded_name)))
+                except HeaderParseError, LookupError, UnicodeError:
+                    decoded = encoded_name
+                mailboxes.append(formataddr((" ".join(decoded.split()), address)))
+            return ", ".join(mailboxes)
+        return str(value) if value is not None else ""
 
     def _first_header_address(self, header: object) -> str:
         mailboxes = self._mailboxes_from_header(header)

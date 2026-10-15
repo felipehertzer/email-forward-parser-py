@@ -193,3 +193,26 @@ def test_loop_regexes_match_keeps_earliest_then_first_listed() -> None:
     assert loop.loop_regexes_match([earlier, later], "abc") == (["b"], earlier)
     assert loop.loop_regexes_match([later, earlier], "abc") == (["b"], earlier)
     assert loop.loop_regexes_match([earlier, tie], "bc") == (["b"], earlier)
+
+
+def test_a_from_whose_encoded_name_decodes_to_a_line_break_is_read_without_raising() -> None:
+    """The email package refuses to build an address with a line break in it (ValueError),
+    and raised it out of get_original_metadata, failing whoever parsed the email."""
+    raw = (
+        "From: =?utf-8?q?Jane=0D=0ABcc=3A_evil=40example=2Ecom?= <jane@example.com>\n"
+        "To: =?utf-8?q?Bob=0A?= <bob@example.com>, =?x-unknown?q?Ann?= <ann@example.com>\n"
+        "Subject: Hello\n\nNo forward here.\n"
+    )
+    client = EmailParserClient()
+
+    metadata = client.get_original_metadata(raw)
+    assert metadata.forwarded is False
+    assert metadata.email.from_ == MailboxResult("Jane Bcc: evil@example.com", "jane@example.com")
+    # A name in a charset Python has no codec for stays as it was written.
+    assert metadata.email.to == [
+        MailboxResult("Bob", "bob@example.com"),
+        MailboxResult("=?x-unknown?q?Ann?=", "ann@example.com"),
+    ]
+    original = client.get_original_eml(raw)
+    assert original["Send-To"] == "jane@example.com"
+    assert original["eml"].startswith(raw.splitlines()[0])
