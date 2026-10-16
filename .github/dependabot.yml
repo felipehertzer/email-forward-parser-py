@@ -12,8 +12,14 @@ updates:
       - "dependencies"
       - "python"
 
+  # The actions in .github/workflows are pinned to commit SHAs; this keeps the SHAs and their version comments
+  # current, in one pull request a week.
   - package-ecosystem: "github-actions"
     directory: "/"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
     schedule:
       interval: "weekly"
       day: "monday"

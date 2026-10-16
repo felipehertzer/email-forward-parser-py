@@ -1,92 +1,93 @@
 #!/bin/sh
-# Style checks on the commits being pushed (GitHub Actions doesn't run them).
+# Style and type checks on the commits being pushed; GitHub Actions runs the tests.
 # Turn it on once per clone: git config core.hooksPath .githooks
 
 fix='uv run black . && uv run isort . && uv run ruff check --fix .'
 
+# The same install as CI's "Install locked dependencies".
+setup() {
+    uv sync --frozen || return
+}
+
 checks() {
-    check locked black --check .
-    check locked isort --check-only .
-    check locked ruff check .
+    check uv run black --check .
+    check uv run isort --check-only .
+    check uv run ruff check .
+    check uv run mypy
 }
 
 # --- the same in every repo from here ---
 
 set -u
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
 common=$(cd "$(git rev-parse --git-common-dir)" && pwd)
-main=$(dirname "$common")
-top=$(git rev-parse --show-toplevel)
 checked="$common/pre-push-checked"
-tmp=
+# A commit passes for this version of the hook: changing the checks checks it again.
+version=$(cksum <"$0" | cut -d' ' -f1)
+# One checkout per clone, kept between pushes so its dependencies and tool caches stay installed.
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/pre-push"
+dir="$cache/$(basename "$(dirname "$common")")-$(printf %s "$common" | cksum | cut -d' ' -f1)"
+lock="$dir.lock"
 
 # Run one check and carry on, so a push shows every failure at once.
 check() {
     "$@" || failed=1
 }
 
-# A Python tool at its uv.lock version, the one `uv sync --frozen` installs.
-locked() {
-    tool=$1
-    shift
-    version=$(awk -v name="name = \"$tool\"" '$0 == name { getline; gsub(/"/, "", $3); print $3; exit }' uv.lock)
-    if [ -z "$version" ]; then
-        echo "pre-push: $tool is not in uv.lock" >&2
-        return 1
+# Another push in this clone may be using the checkout: wait for it, or take over a lock its push left behind.
+take_lock() {
+    mkdir -p "$cache"
+    until mkdir "$lock" 2>/dev/null; do
+        owner=$(cat "$lock/pid" 2>/dev/null)
+        if [ -n "$owner" ] && ! kill -0 "$owner" 2>/dev/null; then
+            rm -rf "$lock"
+            continue
+        fi
+        echo "pre-push: waiting for another push's checks to finish" >&2
+        sleep 5
+    done
+    echo $$ >"$lock/pid"
+}
+trap '[ "$(cat "$lock/pid" 2>/dev/null)" = $$ ] && rm -rf "$lock"' EXIT
+trap 'exit 1' INT TERM
+
+# Check out the commit itself, not the working tree: uncommitted files don't go out.
+checkout() {
+    if [ -f "$dir/.git" ] && git -C "$dir" checkout --quiet --force --detach "$1" 2>/dev/null; then
+        git -C "$dir" clean -fdq
+        return
     fi
-    uvx --quiet --from "$tool==$version" "$tool" "$@"
+    # First push, or the folder or its registration went missing: start it again.
+    rm -rf "$dir"
+    git worktree add --quiet --force --detach "$dir" "$1"
 }
-
-# vendor/ and node_modules/ aren't in git, so borrow them from this checkout or the main one.
-link_deps() {
-    for dep in vendor node_modules; do
-        [ -e "$tmp/$dep" ] && continue
-        for dir in "$top" "$main"; do
-            if [ -d "$dir/$dep" ]; then
-                ln -s "$dir/$dep" "$tmp/$dep"
-                break
-            fi
-        done
-    done
-}
-
-cleanup() {
-    [ -n "$tmp" ] || return 0
-    for dep in vendor node_modules; do
-        if [ -L "$tmp/$dep" ]; then rm "$tmp/$dep"; fi
-    done
-    git worktree remove --force "$tmp"
-    tmp=
-}
-trap 'cleanup; exit 1' INT TERM
 
 status=0
 while read -r _ sha _ _; do
     # A deleted ref sends all zeros, which isn't a commit.
     commit=$(git rev-parse --verify --quiet "$sha^{commit}") || continue
     # Pushing the same commit to the next remote doesn't check it again.
-    grep -qsx "$commit" "$checked" && continue
+    grep -qsx "$commit $version" "$checked" && continue
 
-    # Check the commit itself, not the working tree: uncommitted files don't go out.
-    # The same folder every time keeps pint's cache (keyed by path) warm; a parallel push gets its own.
-    tmp="${TMPDIR:-/tmp}/pre-push-$(printf %s "$common" | cksum | cut -d' ' -f1)"
-    if ! git worktree add --quiet --force --detach "$tmp" "$commit" 2>/dev/null; then
-        tmp=$(mktemp -d "${TMPDIR:-/tmp}/pre-push.XXXXXX")
-        if ! git worktree add --quiet --detach "$tmp" "$commit"; then
-            rmdir "$tmp"
-            tmp=
-            status=1
-            continue
-        fi
+    [ -d "$lock" ] && [ "$(cat "$lock/pid" 2>/dev/null)" = $$ ] || take_lock
+    short=$(git rev-parse --short "$commit")
+    if ! checkout "$commit"; then
+        echo "pre-push: couldn't check out $short in $dir" >&2
+        status=1
+        continue
     fi
-    link_deps
-    if (cd "$tmp" && unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE && failed=0 && checks && exit $failed) </dev/null; then
-        echo "$commit" >>"$checked"
+    if ! (cd "$dir" && setup) </dev/null >&2; then
+        echo "pre-push: installing the dependencies of $short failed" >&2
+        status=1
+        continue
+    fi
+    if (cd "$dir" && failed=0 && checks && exit $failed) </dev/null; then
+        echo "$commit $version" >>"$checked"
     else
         echo >&2
-        echo "pre-push: style checks failed on $(git rev-parse --short "$commit"). Fix with: $fix" >&2
-        echo "pre-push: commit the fix and push again (git push --no-verify skips the checks)." >&2
+        echo "pre-push: checks failed on $short. Style fixes itself with: $fix" >&2
+        echo "pre-push: type errors need a code change. Commit the fix and push again (git push --no-verify skips the checks)." >&2
         status=1
     fi
-    cleanup
 done
 exit $status
