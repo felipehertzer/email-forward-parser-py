@@ -69,6 +69,8 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 [tool.ruff.lint.per-file-ignores]
 # These are executable multilingual fixtures; rewriting locale punctuation changes matching.
 "emailforwardparser/regexs.py" = ["E501", "RUF001"]
+# Generated from regexs.py, with its patterns as keys.
+"emailforwardparser/literals.py" = ["E501", "RUF001"]
 
 [tool.mypy]
 python_version = "3.14"

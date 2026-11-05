@@ -1,12 +1,24 @@
 from collections.abc import Sequence
 from re import Match, Pattern
 
+from .literals import REQUIRED_LITERALS
 from .utils import split_with_regexp
+
+
+def may_match(regex: Pattern[str], string: str) -> bool:
+    """False when `string` lacks text that every match of `regex` contains.
+
+    Most patterns cannot match a given string, and each would otherwise scan all of it.
+    """
+    literal = REQUIRED_LITERALS.get(regex.pattern)
+    return literal is None or literal in string
 
 
 def loop_regexes_replace(regexes: Sequence[Pattern[str]], string: str) -> str:
     match = string
     for regex in regexes:
+        if not may_match(regex, string):
+            continue
         current_match = regex.sub("", string)
         if len(current_match) < len(match):
             match = current_match
@@ -19,6 +31,8 @@ def loop_regexes_split(
 ) -> list[str]:
     match: list[str] = []
     for regex in regexes:
+        if not may_match(regex, string):
+            continue
         current_match = split_with_regexp(regex, string)
         if len(current_match) > 1:
             if highest_position:
@@ -39,6 +53,8 @@ def loop_regexes_match(
     match_index = 0
 
     for regex in regexes:
+        if not may_match(regex, string):
+            continue
         current_match = regex.search(string)
         if not current_match:  # style note
             continue

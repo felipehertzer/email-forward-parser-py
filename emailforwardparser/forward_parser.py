@@ -225,8 +225,11 @@ def parse_mailbox(regexes: list[Pattern[str]], text: str) -> list[MailboxResult]
         mailboxes_line = match[-1].strip()
         if mailboxes_line:
             mailboxes = []
+            mailbox_regexes = (
+                regexs.MAILBOX if "mailto:" in mailboxes_line else regexs.MAILBOX_WITHOUT_MAILTO
+            )
             while mailboxes_line:
-                mailbox_match, _ = loop.loop_regexes_match(regexs.MAILBOX, mailboxes_line)
+                mailbox_match, _ = loop.loop_regexes_match(mailbox_regexes, mailboxes_line)
                 if mailbox_match:
                     if len(mailbox_match) == 3:
                         name = mailbox_match[1]

@@ -708,4 +708,8 @@ MAILBOX = [
     re.compile(r"^([^;](?:[^\S\n]|.+?(?<!\s)))\s*[\[|<](.+?)[\]|>]"),
 ]
 
+# The first three MAILBOX patterns need "mailto:". A recipients line only loses text as its
+# mailboxes are read, so one without "mailto:" never gains it: parse_mailbox leaves them out.
+MAILBOX_WITHOUT_MAILTO = MAILBOX[3:]
+
 MAILBOX_ADDRESS = [re.compile(r"^(([^\s@,;<>]+)@([^\s@,;<>]{2,}))$")]

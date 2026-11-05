@@ -306,6 +306,14 @@ python -m pytest
 
 `pytest` is configured to require 100% statement and branch coverage.
 
+`emailforwardparser/literals.py` lists the text each pattern in `regexs.py` needs
+before it can match, so a pattern is not run on a string without it. After changing
+a pattern, write the table again (the suite fails until it matches):
+
+```bash
+python -m tests.literals_test && python -m black emailforwardparser/literals.py
+```
+
 ## Release
 
 Build and verify the distribution:
