@@ -406,6 +406,16 @@ def test_utils_regex_helpers_cover_empty_limited_and_duplicate_splits() -> None:
     assert utils.is_graphic("\n") is True
 
 
+def test_remove_non_graphic_keeps_text_and_whitespace_and_drops_the_rest() -> None:
+    kept = "Café 中文 🙂\n\r\t \u00a0\u2028\u2029¶€\u0301"
+    # Controls, soft hyphen, zero-width space, BOM, a lone surrogate, private use, unassigned.
+    dropped = "\x00\x07\x1b\x7f\x85\u00ad\u200b\ufeff\ud800\ue000\U000f0000\U0010ffff"
+
+    assert utils.remove_non_graphic(kept) is kept
+    assert utils.remove_non_graphic(dropped + kept[:6] + dropped + kept[6:] + dropped) == kept
+    assert utils.remove_non_graphic(dropped) == ""
+
+
 def test_parser_unusual_empty_match_paths() -> None:
     with patch(
         "emailforwardparser.forward_parser.parse_mailbox",

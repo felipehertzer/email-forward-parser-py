@@ -30,8 +30,18 @@ def decode_encoded_words(match: Match[str]) -> str:
         return words
 
 
+def remove_non_graphic(s: str) -> str:
+    """Drop every character is_graphic() rejects.
+
+    Each distinct character is judged once: a body has thousands of characters but
+    rarely more than a few hundred distinct ones, and str.translate() does the rest.
+    """
+    rejected = {ord(char): None for char in set(s) if not is_graphic(char)}
+    return s.translate(rejected) if rejected else s
+
+
 def preprocess_string(s: str) -> str:
-    s = "".join(char for char in s if is_graphic(char))
+    s = remove_non_graphic(s)
     s = s.replace("\ufeff", "")
     # Decode encoded words in place. email.header.decode_header() on the whole
     # text would join every line into one (so no line-anchored pattern could
