@@ -14,6 +14,7 @@ keywords = ["email", "forwarded-email", "parser", "eml", "mime"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "License :: OSI Approved :: Apache Software License",
     "Topic :: Communications :: Email",
     "Topic :: Text Processing",
@@ -51,7 +52,7 @@ show_missing = true
 
 [tool.black]
 line-length = 100
-target-version = ["py314"]
+target-version = ["py314", "py315"]
 
 [tool.isort]
 combine_as_imports = true

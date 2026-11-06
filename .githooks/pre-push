@@ -1,5 +1,6 @@
 #!/bin/sh
-# Style and type checks on the commits being pushed; GitHub Actions runs the tests.
+# Style, type and test checks on the commits being pushed, on the newest Python (.python-version); GitHub Actions
+# runs the tests on the oldest one the package supports.
 # Turn it on once per clone: git config core.hooksPath .githooks
 
 fix='uv run black . && uv run isort . && uv run ruff check --fix .'
@@ -14,6 +15,11 @@ checks() {
     check uv run isort --check-only .
     check uv run ruff check .
     check uv run mypy
+    # The coverage gate runs with the JIT off: under it, CPython 3.15 reports a loop's exit branch from the wrong
+    # instruction (coveragepy/coveragepy#2249). Callers may run Python with the JIT on, so the suite runs again
+    # under it, without coverage.
+    check env PYTHON_JIT=0 uv run pytest
+    check env PYTHON_JIT=1 uv run pytest --no-cov
 }
 
 # --- the same in every repo from here ---

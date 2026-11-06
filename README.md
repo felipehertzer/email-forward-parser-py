@@ -304,7 +304,11 @@ python -m mypy
 python -m pytest
 ```
 
-`pytest` is configured to require 100% statement and branch coverage.
+`pytest` is configured to require 100% statement and branch coverage. On Python 3.15,
+measure it with the JIT off (`PYTHON_JIT=0 python -m pytest`): with the JIT on, CPython
+3.15 reports some branches from the wrong instruction (coveragepy/coveragepy#2249). The
+pre-push hook runs the gate that way, then the suite again with `PYTHON_JIT=1` and
+`--no-cov`.
 
 `emailforwardparser/literals.py` lists the text each pattern in `regexs.py` needs
 before it can match, so a pattern is not run on a string without it. After changing
